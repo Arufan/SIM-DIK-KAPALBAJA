@@ -20,6 +20,11 @@
 }
 
 html, body, #root { height: 100%; }
+
+/* Field-use basics: no double-tap zoom delays, no accidental text selection
+   on chrome elements, momentum scroll lists */
+button, a, select, label { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+input, textarea { touch-action: manipulation; user-select: text; -webkit-user-select: text; }
 body {
   @apply bg-paper text-ink font-sans antialiased;
   background-image:

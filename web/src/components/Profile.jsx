@@ -50,7 +50,7 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
           placeholder="🔍 Cari nama, NPM, atau Prodi..."
           className="w-full mb-3 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
         />
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-72 overflow-y-auto thin-scroll pr-1">
           {filtered.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">Belum ada calon anggota.</p>}
           {filtered.map((c) => {
             const s = overallStats(evals.filter((e) => e.caangId === c.id));
@@ -99,7 +99,7 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <div className="h-64">
+              <div className="h-56 sm:h-64">
                 <h3 className="text-center text-sm font-bold text-slate-700 mb-1">Skill Matrix Radar</h3>
                 <Radar
                   data={radarData}

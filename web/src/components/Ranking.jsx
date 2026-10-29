@@ -109,13 +109,39 @@ export default function Ranking({ openModal }) {
                 ...ranked.map((r, i) => [i + 1, r.c.npm, r.c.nama, r.c.fakultas, r.c.prodi, r.stats.nav, r.stats.tali, r.stats.ppgd, r.stats.surv, r.stats.team, r.stats.fisik, r.stats.totalAvg, r.stats.status])],
             )
           }
-          className="ml-auto rounded-lg bg-slate-800 text-white text-sm font-semibold px-4 py-2.5 hover:bg-slate-700"
+          className="ml-auto rounded-sm bg-forest-950 text-kuning label-mono px-3 sm:px-4 py-2.5 hover:brightness-125"
         >
-          📄 Ekspor Data Ranking CSV
+          📄 Ekspor CSV
         </button>
       </div>
 
-      <div className="bg-white rounded-md border border-forest-950/10 shadow-sm overflow-x-auto thin-scroll">
+      {/* mobile: ranked cards */}
+      <div className="md:hidden space-y-3">
+        {ranked.length === 0 && (
+          <div className="bg-white rounded-md border border-forest-950/10 p-6 text-center text-sm text-sage">Belum ada calon anggota.</div>
+        )}
+        {ranked.map((r, i) => (
+          <div key={r.c.id} className="bg-white rounded-md border border-forest-950/10 shadow-sm p-4 flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-display font-bold text-sm shrink-0 ${i === 0 ? "bg-kuning text-forest-950" : i === 1 ? "bg-forest-950 text-white" : i === 2 ? "bg-forest-700 text-white" : "bg-paper-2 text-sage"}`}>
+              {i + 1}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-ink truncate">{r.c.nama}</p>
+              <p className="text-xs text-sage truncate">{r.c.fakultas} - {r.c.prodi}</p>
+              <span className={`inline-block mt-1 rounded-sm px-2 py-0.5 text-[10px] font-semibold ${STATUS_STYLES[r.stats.status]}`}>{r.stats.status}</span>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="font-display font-bold text-2xl text-forest-700 leading-none">{r.stats.count ? r.stats.totalAvg : "-"}</p>
+              <button
+                onClick={() => { if (r.stats.count === 0) { showToast("Belum ada evaluasi untuk rapor", "error"); return; } openModal({ type: "rapor", caangId: r.c.id }); }}
+                className="mt-1.5 rounded-sm bg-forest-950 text-kuning label-mono px-2.5 py-1.5 border border-kuning/40"
+              >📕 Rapor</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden md:block bg-white rounded-md border border-forest-950/10 shadow-sm overflow-x-auto thin-scroll">
         <table className="w-full text-sm min-w-[900px]">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-white bg-forest-950">

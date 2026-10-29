@@ -43,7 +43,48 @@ export default function StageEvals({ stage, openModal }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-md border border-forest-950/10 shadow-sm overflow-x-auto thin-scroll">
+      {/* mobile cards */}
+      <div className="md:hidden space-y-3">
+        {rows.length === 0 && (
+          <div className="bg-white rounded-md border border-forest-950/10 p-6 text-center text-sm text-sage">
+            Belum ada penilaian untuk tahapan ini.
+          </div>
+        )}
+        {rows.map((e) => (
+          <div key={e.id} className="bg-white rounded-md border border-forest-950/10 shadow-sm p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-bold text-ink truncate">{byId[e.caangId]?.nama ?? "(caang terhapus)"}</p>
+                <p className="label-mono text-sage mt-0.5">{e.penguji} · {e.tanggal}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="font-display font-bold text-2xl text-forest-700 leading-none">{e.rata ?? stageTotal(e)}</p>
+                <p className="label-mono text-sage mt-1">Rata-rata</p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-5 gap-1.5 text-center">
+              {[["Navdar", e.navdarT, e.navdarP], ["Tali", e.taliT, e.taliP], ["PPGD", e.ppgdT, e.ppgdP], ["Surv", e.survivalT, e.survivalP], ["MPP", e.mppT, e.mppP]].map(([label, a, b]) => (
+                <div key={label} className="rounded-sm bg-paper-2 py-1.5">
+                  <p className="text-[10px] font-semibold text-sage uppercase">{label}</p>
+                  <p className="text-xs font-bold text-ink">{a}/{b}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <span className={`rounded-sm px-2.5 py-1.5 label-mono flex-1 text-center ${e.rata >= STAGE_LULUS_THRESHOLD ? "bg-forest-700/15 text-forest-700" : "bg-amber-100 text-amber-700"}`}>
+                {e.keterangan ?? (e.rata >= STAGE_LULUS_THRESHOLD ? "Lulus" : "Perlu Perbaikan")}
+              </span>
+              <button onClick={() => openModal({ type: "stage", stage, edit: e })} className="rounded-sm border border-forest-950/20 px-3 py-2 label-mono text-forest-900">✏️</button>
+              <button
+                onClick={async () => { if (confirm("Hapus penilaian tahapan ini?")) { await deleteRecord("stage_evals", e.id); showToast("Penilaian dihapus"); } }}
+                className="rounded-sm border border-red-200 bg-red-50 px-3 py-2 label-mono text-red-700"
+              >🗑️</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden md:block bg-white rounded-md border border-forest-950/10 shadow-sm overflow-x-auto thin-scroll">
         <table className="w-full text-sm min-w-[1000px]">
           <thead>
             <tr className={`text-left text-xs uppercase tracking-wide text-white ${meta.header}`}>

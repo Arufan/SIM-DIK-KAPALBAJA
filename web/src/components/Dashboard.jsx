@@ -10,7 +10,7 @@ const CARD_COLORS = ["text-emerald-600", "bg-emerald-100", "text-amber-600", "bg
 
 function StatCard({ label, value, sub, icon, tone }) {
   return (
-    <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-5 flex items-start justify-between">
+    <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-4 flex items-start justify-between">
       <div>
         <p className="label-mono text-sage">{label}</p>
         <p className={`mt-1 text-3xl font-display font-bold ${tone?.text ?? "text-slate-900"}`}>{value}</p>
@@ -42,7 +42,7 @@ export default function Dashboard({ setTab, setSelectedCaangId }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label="Total Calon Anggota" value={total} sub="Aktif Proses Pembinaan" icon="👥" tone={{ text: "text-slate-900", bg: "bg-emerald-100" }} />
         <StatCard label="Lulus Standar" value={lulus} sub="✓ Memenuhi Benchmark" icon="🎯" tone={{ text: "text-emerald-600", bg: "bg-emerald-100" }} />
         <StatCard label="Perlu Evaluasi" value={perlu} sub="▲ Perlu Bimbingan" icon="👮" tone={{ text: "text-amber-600", bg: "bg-amber-100" }} />
@@ -55,7 +55,7 @@ export default function Dashboard({ setTab, setSelectedCaangId }) {
             <h2 className="font-bold text-ink">📶 Distribusi Rata-Rata Nilai per Bidang</h2>
             <span className="text-xs text-sage">Kumulatif Angkatan</span>
           </div>
-          <div className="h-72">
+          <div className="h-56 sm:h-72">
             <Bar
               data={{
                 labels: BIDANG.map((b) => b.short),

@@ -5,22 +5,32 @@ import { fisikScore, weeklyTotal, stageTotal } from "../lib/scoring.js";
 import { saveRecord } from "../lib/sync.js";
 import { showToast } from "./toast.jsx";
 
+// Bottom sheet on phones (thumb-reachable, native app feel), centered card on
+// desktop. Content scrolls under a sticky header; 16px inputs prevent iOS zoom.
 function Modal({ title, children, onClose, wide }) {
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-start justify-center overflow-y-auto p-4">
-      <div className={`w-full ${wide ? "max-w-3xl" : "max-w-lg"} bg-paper rounded-md shadow-2xl my-6`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="font-bold text-slate-800">{title}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+    <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-end sm:items-center sm:justify-center sm:p-4 print:hidden">
+      <div className={`w-full ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"} bg-paper rounded-t-xl sm:rounded-md shadow-2xl flex flex-col max-h-[94dvh] sm:max-h-[88vh]`}>
+        <div className="sm:hidden pt-2 pb-1 flex justify-center shrink-0 cursor-pointer" onClick={onClose}>
+          <div className="w-10 h-1 rounded-full bg-slate-300" />
         </div>
-        <div className="p-6">{children}</div>
+        <div className="flex items-center justify-between px-5 py-3 border-b shrink-0">
+          <h2 className="font-bold text-ink text-base">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl w-9 h-9 flex items-center justify-center">✕</button>
+        </div>
+        <div
+          className="p-5 overflow-y-auto thin-scroll"
+          style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
 }
 
 const inputCls =
-  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600";
+  "w-full rounded-sm border border-forest-950/25 bg-white px-3.5 py-2.5 text-base text-ink focus:outline-none focus:ring-2 focus:ring-forest-700";
 const num = (v) => (v === "" ? null : Number(v));
 
 function Field({ label, children }) {
@@ -38,10 +48,10 @@ function ScorePair({ label, color, t, p, setT, setP }) {
       <p className={`text-xs font-bold mb-2 ${color}`}>{label}</p>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Teori (0–100)">
-          <input type="number" min="0" max="100" className={inputCls} value={t} onChange={setT} />
+          <input type="number" inputMode="decimal" min="0" max="100" className={inputCls} value={t} onChange={setT} />
         </Field>
         <Field label="Praktik (0–100)">
-          <input type="number" min="0" max="100" className={inputCls} value={p} onChange={setP} />
+          <input type="number" inputMode="decimal" min="0" max="100" className={inputCls} value={p} onChange={setP} />
         </Field>
       </div>
     </div>
@@ -78,8 +88,8 @@ export function CaangModal({ edit, onClose }) {
           <Field label="Nama Mentor *"><input className={inputCls} placeholder="Mentor" value={f.mentorNama} onChange={set("mentorNama")} /></Field>
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-2.5 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
-          <button type="submit" className="rounded-sm bg-kuning px-5 py-2.5 label-mono text-forest-950 hover:brightness-95">Simpan Profile</button>
+          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-3 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
+          <button type="submit" className="rounded-sm bg-kuning px-5 py-3 label-mono text-forest-950 hover:brightness-95">Simpan Profile</button>
         </div>
       </form>
     </Modal>
@@ -187,9 +197,9 @@ export function WeeklyEvalModal({ edit, caangId, onClose }) {
           <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
             <p className="text-xs font-bold mb-2 text-purple-700">🏃 Penilaian Tes Fisik {fisik != null && <span className="ml-1 rounded bg-kuning/30 px-2 py-0.5 text-forest-950">Skor: {fisik}</span>}</p>
             <div className="grid grid-cols-3 gap-2">
-              <Field label="Lari 3Km (Menit)"><input type="number" step="0.1" min="0" className={inputCls} value={f.runMin} onChange={set("runMin")} /></Field>
-              <Field label="Push-Up (Reps)"><input type="number" min="0" className={inputCls} value={f.pushUp} onChange={set("pushUp")} /></Field>
-              <Field label="Pull-Up (Reps)"><input type="number" min="0" className={inputCls} value={f.pullUp} onChange={set("pullUp")} /></Field>
+              <Field label="Lari 3Km (Menit)"><input type="number" inputMode="decimal" step="0.1" min="0" className={inputCls} value={f.runMin} onChange={set("runMin")} /></Field>
+              <Field label="Push-Up (Reps)"><input type="number" inputMode="numeric" min="0" className={inputCls} value={f.pushUp} onChange={set("pushUp")} /></Field>
+              <Field label="Pull-Up (Reps)"><input type="number" inputMode="numeric" min="0" className={inputCls} value={f.pullUp} onChange={set("pullUp")} /></Field>
             </div>
           </div>
         </div>
@@ -203,8 +213,8 @@ export function WeeklyEvalModal({ edit, caangId, onClose }) {
         )}
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-2.5 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
-          <button type="submit" className="rounded-sm bg-kuning px-5 py-2.5 label-mono text-forest-950 hover:brightness-95">Simpan Evaluasi</button>
+          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-3 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
+          <button type="submit" className="rounded-sm bg-kuning px-5 py-3 label-mono text-forest-950 hover:brightness-95">Simpan Evaluasi</button>
         </div>
       </form>
     </Modal>
@@ -275,8 +285,8 @@ export function StageModal({ stage, edit, onClose }) {
           <input className={inputCls} placeholder="Contoh: Lanjut Ke Diksar / Anggota Muda" value={f.keterangan} onChange={set("keterangan")} />
         </Field>
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-2.5 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
-          <button type="submit" className="rounded-sm bg-kuning px-5 py-2.5 label-mono text-forest-950 hover:brightness-95">Simpan Penilaian</button>
+          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-3 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
+          <button type="submit" className="rounded-sm bg-kuning px-5 py-3 label-mono text-forest-950 hover:brightness-95">Simpan Penilaian</button>
         </div>
       </form>
     </Modal>

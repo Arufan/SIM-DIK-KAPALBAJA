@@ -57,14 +57,14 @@ export default function WeeklyEvals({ openModal }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Cari nama Caang..."
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+          className="rounded-sm border border-forest-950/20 bg-white px-3 py-2.5 text-base w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-forest-700"
         />
-        <select value={week} onChange={(e) => setWeek(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+        <select value={week} onChange={(e) => setWeek(e.target.value)} className="rounded-sm border border-forest-950/20 bg-white px-3 py-2.5 text-base w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-forest-700">
           <option value="">Semua Minggu (1 - 14)</option>
           {Array.from({ length: 14 }, (_, i) => i + 1).map((n) => (
             <option key={n} value={n}>Minggu {n}</option>
@@ -72,7 +72,46 @@ export default function WeeklyEvals({ openModal }) {
         </select>
       </div>
 
-      <div className="bg-white rounded-md border border-forest-950/10 shadow-sm overflow-x-auto thin-scroll">
+      {/* mobile: thumb-friendly cards instead of a wide table */}
+      <div className="md:hidden space-y-3">
+        {rows.length === 0 && (
+          <div className="bg-white rounded-md border border-forest-950/10 p-6 text-center text-sm text-sage">
+            Belum ada penilaian. Tekan tombol <b className="text-forest-950">+</b> di kanan bawah.
+          </div>
+        )}
+        {rows.map(({ e, c }) => (
+          <div key={e.id} className="bg-white rounded-md border border-forest-950/10 shadow-sm p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-bold text-ink truncate">{c.nama}</p>
+                <p className="label-mono text-forest-700 mt-0.5">Minggu {e.weekNo} · {e.tanggal}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="font-display font-bold text-2xl text-forest-700 leading-none">{e.avg ?? weeklyTotal(e)}</p>
+                <p className="label-mono text-sage mt-1">Total</p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              {[["Navdar", e.navdarT, e.navdarP], ["Tali", e.taliT, e.taliP], ["PPGD", e.ppgdT, e.ppgdP], ["Survival", e.survivalT, e.survivalP], ["Buddy", e.buddy, e.team], ["Fisik", `${e.runMin}m`, `${e.pushUp}/${e.pullUp}`]].map(([label, a, b]) => (
+                <div key={label} className="rounded-sm bg-paper-2 py-1.5">
+                  <p className="text-[10px] font-semibold text-sage uppercase">{label}</p>
+                  <p className="text-xs font-bold text-ink">{a}/{b}</p>
+                </div>
+              ))}
+            </div>
+            {e.catatan && <p className="mt-2 text-xs text-sage italic">“{e.catatan}”</p>}
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => openModal({ type: "eval", edit: e })} className="flex-1 rounded-sm border border-forest-950/20 py-2 label-mono text-forest-900">✏️ Edit</button>
+              <button
+                onClick={async () => { if (confirm(`Hapus penilaian ${c.nama} Minggu ${e.weekNo}?`)) { await deleteRecord("weekly_evals", e.id); showToast("Penilaian dihapus"); } }}
+                className="rounded-sm border border-red-200 bg-red-50 px-4 py-2 label-mono text-red-700"
+              >🗑️</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden md:block bg-white rounded-md border border-forest-950/10 shadow-sm overflow-x-auto thin-scroll">
         <table className="w-full text-sm min-w-[900px]">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-slate-500 bg-forest-950 text-kuning">
