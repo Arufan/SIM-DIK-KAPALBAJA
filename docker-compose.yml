@@ -1,3 +1,5 @@
+# Production: API + PWA behind the existing Cloudflare Tunnel on the VPS.
+# Copy .env.example to .env and fill real secrets before up.
 services:
   api:
     build: ./api
@@ -8,10 +10,12 @@ services:
       DATABASE_URL: file:/data/simdik.db
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set in .env}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set in .env}
+      SEED_ADMIN_USERNAME: ${SEED_ADMIN_USERNAME:-admin}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?set in .env}
     volumes:
       - api-data:/data
     ports:
-      # Cloudflare Tunnel points at this localhost port; not exposed publicly
+      # localhost-only; the tunnel reaches the container via the docker network
       - "127.0.0.1:8080:8080"
     restart: unless-stopped
     healthcheck:
@@ -20,13 +24,15 @@ services:
       timeout: 5s
       retries: 3
 
-  # Optional: run the tunnel on the same host instead of a separate service
-  # cloudflared:
-  #   image: cloudflare/cloudflared:latest
-  #   command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - api
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://mentor.kapalbaja.web.id}
+    container_name: simdik-web
+    restart: unless-stopped
+    depends_on:
+      - api
 
 volumes:
   api-data:
