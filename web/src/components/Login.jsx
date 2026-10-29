@@ -39,7 +39,7 @@ export default function Login({ onDone }) {
   }
 
   return (
-    <div className="min-h-full bg-forest-950 relative overflow-hidden print:hidden">
+    <div className="min-h-screen bg-forest-950 relative overflow-hidden print:hidden">
       {/* contour/grid backdrop, like the site hero */}
       <div
         className="absolute inset-0 opacity-[0.14]"
@@ -51,7 +51,7 @@ export default function Login({ onDone }) {
           WebkitMaskImage: "radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%)",
         }}
       />
-      <div className="relative min-h-full flex items-center justify-center p-4">
+      <div className="relative min-h-screen flex items-center justify-center p-4" style={{ minHeight: "100dvh" }}>
         <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* hero copy */}
           <div className="hidden lg:block">

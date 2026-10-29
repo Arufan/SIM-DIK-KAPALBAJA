@@ -6,8 +6,8 @@ import { deleteRecord } from "../lib/sync.js";
 import { showToast } from "./toast.jsx";
 
 const STAGE_META = {
-  uji_kampus: { title: "🎓 Penilaian Uji Kompetensi di Kampus", subtitle: "Evaluasi pemahaman teori dan praktik pra-lapangan calon anggota di kampus.", button: "+ Input Uji Kompetensi", accent: "bg-sky-800 hover:bg-sky-700", header: "bg-sky-700" },
-  diksar: { title: "✅ Penilaian Evaluasi Diksar Penjelajah", subtitle: "Evaluasi Pendidikan Dasar Lapangan (DIKSAR) calon anggota UKM KAPALBAJA.", button: "+ Input Evaluasi Diksar", accent: "bg-emerald-700 hover:brightness-95", header: "bg-emerald-800" },
+  uji_kampus: { title: "🎓 Penilaian Uji Kompetensi di Kampus", subtitle: "Evaluasi pemahaman teori dan praktik pra-lapangan calon anggota di kampus.", button: "+ Input Uji Kompetensi", accent: "bg-forest-700 text-white hover:brightness-110", header: "bg-forest-900" },
+  diksar: { title: "✅ Penilaian Evaluasi Diksar Penjelajah", subtitle: "Evaluasi Pendidikan Dasar Lapangan (DIKSAR) calon anggota UKM KAPALBAJA.", button: "+ Input Evaluasi Diksar", accent: "bg-kuning text-forest-950 hover:brightness-95", header: "bg-forest-900" },
   diklat: { title: "⛰️ Penilaian Evaluasi Diklat Penjelajah", subtitle: "Evaluasi Akhir Pendidikan Latihan (DIKLAT) Penetapan Anggota Muda KAPALBAJA.", button: "+ Input Evaluasi Diklat", accent: "bg-forest-950 text-kuning hover:brightness-125", header: "bg-forest-950" },
 };
 
@@ -36,8 +36,8 @@ export default function StageEvals({ stage, openModal }) {
           <p className="text-xs text-slate-400">{meta.subtitle}</p>
         </div>
         <div className="ml-auto flex gap-2">
-          <button onClick={csv} className="rounded-lg bg-forest-950 text-kuning label-mono px-4 py-2.5 hover:bg-slate-700">📄 Ekspor CSV</button>
-          <button onClick={() => openModal({ type: "stage", stage })} className={`rounded-lg text-white text-sm font-semibold px-4 py-2.5 ${meta.accent}`}>
+          <button onClick={csv} className="rounded-sm bg-forest-950 text-kuning label-mono px-3 sm:px-4 py-2.5 hover:brightness-125">📄 Ekspor CSV</button>
+          <button onClick={() => openModal({ type: "stage", stage })} className={`rounded-sm label-mono px-3 sm:px-4 py-3 ${meta.accent}`}>
             {meta.button}
           </button>
         </div>
@@ -119,7 +119,7 @@ export default function StageEvals({ stage, openModal }) {
                 <td className="py-2.5 px-3">{e.mppT}/{e.mppP}</td>
                 <td className="py-2.5 px-3 font-bold text-forest-700">{e.rata ?? stageTotal(e)}</td>
                 <td className="py-2.5 px-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${e.rata >= STAGE_LULUS_THRESHOLD ? "bg-emerald-100 text-forest-700" : "bg-amber-100 text-amber-700"}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${e.rata >= STAGE_LULUS_THRESHOLD ? "bg-forest-700/15 text-forest-700" : "bg-amber-100 text-amber-700"}`}>
                     {e.keterangan ?? (e.rata >= STAGE_LULUS_THRESHOLD ? "Lulus" : "Perlu Perbaikan")}
                   </span>
                 </td>
