@@ -21,10 +21,26 @@ then everything syncs to a central database when back online.
 
 - [x] Phase 0 — repo scaffold, plan
 - [x] Phase 1 — backend API + auth + data model + offline sync (smoke: `npm run smoke` in `api/`, 24 checks)
-- [ ] Phase 2 — offline-first web app
-- [ ] Phase 3 — sync engine on the client (server side done: `/sync/push`, `/sync/pull`)
+- [x] Phase 2 — offline-first web app (all 7 screens, Dexie local DB, outbox sync, offline badge; E2E: input while API down → auto-sync on reconnect)
+- [x] Phase 3 — sync engine (server push/pull + client outbox/cursor/LWW)
 - [ ] Phase 4 — Capacitor APK + distribution
 - [ ] Phase 5 — hardening + pilot rollout
+
+## Quick start (full local dev)
+
+```bash
+# 1. API in Docker (production image, SQLite volume, seeded admin/kapalbaja)
+docker compose -f docker-compose.dev.yml up -d --build   # http://localhost:8080
+
+# 2. Web app
+cd web
+npm install
+npm run dev                                              # http://localhost:5173
+```
+
+Login `admin` / `kapalbaja` (dev seed). Stop the API container to demo offline mode:
+input still saves locally, the badge shows pending changes, and everything syncs
+automatically when the API is reachable again.
 
 ## Quick start (API)
 

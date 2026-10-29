@@ -1,0 +1,99 @@
+import { useMemo } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db, live } from "../lib/db.js";
+import { stageTotal, STAGE_LULUS_THRESHOLD } from "../lib/scoring.js";
+import { deleteRecord } from "../lib/sync.js";
+import { showToast } from "./toast.jsx";
+
+const STAGE_META = {
+  uji_kampus: { title: "🎓 Penilaian Uji Kompetensi di Kampus", subtitle: "Evaluasi pemahaman teori dan praktik pra-lapangan calon anggota di kampus.", button: "+ Input Uji Kompetensi", accent: "bg-sky-800 hover:bg-sky-700", header: "bg-sky-700" },
+  diksar: { title: "✅ Penilaian Evaluasi Diksar Penjelajah", subtitle: "Evaluasi Pendidikan Dasar Lapangan (DIKSAR) calon anggota UKM KAPALBAJA.", button: "+ Input Evaluasi Diksar", accent: "bg-emerald-700 hover:bg-emerald-600", header: "bg-emerald-800" },
+  diklat: { title: "⛰️ Penilaian Evaluasi Diklat Penjelajah", subtitle: "Evaluasi Akhir Pendidikan Latihan (DIKLAT) Penetapan Anggota Muda KAPALBAJA.", button: "+ Input Evaluasi Diklat", accent: "bg-amber-600 hover:bg-amber-500", header: "bg-amber-700" },
+};
+
+export default function StageEvals({ stage, openModal }) {
+  const meta = STAGE_META[stage];
+  const evals = useLiveQuery(() => live("stage_evals"), [], []);
+  const caang = useLiveQuery(() => live("caang"), [], []);
+  const byId = useMemo(() => Object.fromEntries(caang.map((c) => [c.id, c])), [caang]);
+  const rows = useMemo(() => evals.filter((e) => e.stage === stage), [evals, stage]);
+
+  const csv = () => {
+    const head = ["No", "Nama Caang", "Penguji", "Tanggal", "Navdar", "Tali", "PPGD", "Survival", "MPP", "Rata-Rata", "Keterangan"];
+    const body = rows.map((e, i) => [
+      i + 1, byId[e.caangId]?.nama ?? "?", e.penguji, e.tanggal,
+      `${e.navdarT}/${e.navdarP}`, `${e.taliT}/${e.taliP}`, `${e.ppgdT}/${e.ppgdP}`, `${e.survivalT}/${e.survivalP}`, `${e.mppT}/${e.mppP}`,
+      e.rata ?? stageTotal(e), e.keterangan ?? "",
+    ]);
+    import("./WeeklyEvals.jsx").then((m) => m.downloadCsv(`${stage}.csv`, [head, ...body]));
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-white rounded-xl shadow-sm p-5 flex flex-wrap items-center gap-3">
+        <div>
+          <h2 className="font-bold text-slate-800">{meta.title}</h2>
+          <p className="text-xs text-slate-400">{meta.subtitle}</p>
+        </div>
+        <div className="ml-auto flex gap-2">
+          <button onClick={csv} className="rounded-lg bg-slate-800 text-white text-sm font-semibold px-4 py-2.5 hover:bg-slate-700">📄 Ekspor CSV</button>
+          <button onClick={() => openModal({ type: "stage", stage })} className={`rounded-lg text-white text-sm font-semibold px-4 py-2.5 ${meta.accent}`}>
+            {meta.button}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto thin-scroll">
+        <table className="w-full text-sm min-w-[1000px]">
+          <thead>
+            <tr className={`text-left text-xs uppercase tracking-wide text-white ${meta.header}`}>
+              <th className="py-3 px-3">No</th>
+              <th className="py-3 px-3">Nama Caang</th>
+              <th className="py-3 px-3">Nama Penguji</th>
+              <th className="py-3 px-3">Tanggal</th>
+              <th className="py-3 px-3">Navdar (T/P)</th>
+              <th className="py-3 px-3">Tali (T/P)</th>
+              <th className="py-3 px-3">PPGD (T/P)</th>
+              <th className="py-3 px-3">Survival (T/P)</th>
+              <th className="py-3 px-3">MPP (T/P)</th>
+              <th className="py-3 px-3">Rata-Rata</th>
+              <th className="py-3 px-3">Keterangan</th>
+              <th className="py-3 px-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td colSpan={12} className="py-8 text-center text-slate-400">Belum ada penilaian untuk tahapan ini.</td></tr>
+            )}
+            {rows.map((e, i) => (
+              <tr key={e.id} className="border-b border-slate-100 hover:bg-slate-50">
+                <td className="py-2.5 px-3 text-slate-400">{i + 1}</td>
+                <td className="py-2.5 px-3 font-semibold text-slate-800">{byId[e.caangId]?.nama ?? "(caang terhapus)"}</td>
+                <td className="py-2.5 px-3 text-slate-600">{e.penguji}</td>
+                <td className="py-2.5 px-3 text-slate-500">{e.tanggal}</td>
+                <td className="py-2.5 px-3">{e.navdarT}/{e.navdarP}</td>
+                <td className="py-2.5 px-3">{e.taliT}/{e.taliP}</td>
+                <td className="py-2.5 px-3">{e.ppgdT}/{e.ppgdP}</td>
+                <td className="py-2.5 px-3">{e.survivalT}/{e.survivalP}</td>
+                <td className="py-2.5 px-3">{e.mppT}/{e.mppP}</td>
+                <td className="py-2.5 px-3 font-bold text-emerald-700">{e.rata ?? stageTotal(e)}</td>
+                <td className="py-2.5 px-3">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${e.rata >= STAGE_LULUS_THRESHOLD ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                    {e.keterangan ?? (e.rata >= STAGE_LULUS_THRESHOLD ? "Lulus" : "Perlu Perbaikan")}
+                  </span>
+                </td>
+                <td className="py-2.5 px-3 whitespace-nowrap">
+                  <button onClick={() => openModal({ type: "stage", stage, edit: e })} className="mr-1" title="Edit">✏️</button>
+                  <button
+                    onClick={async () => { if (confirm("Hapus penilaian tahapan ini?")) { await deleteRecord("stage_evals", e.id); showToast("Penilaian dihapus"); } }}
+                    title="Hapus"
+                  >🗑️</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

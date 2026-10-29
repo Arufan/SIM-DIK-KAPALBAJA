@@ -1,0 +1,22 @@
+# Local dev: runs the exact production image with a persistent SQLite volume.
+# Usage: docker compose -f docker-compose.dev.yml up -d --build
+services:
+  api:
+    build: ./api
+    container_name: simdik-api-dev
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DATABASE_URL: file:/data/simdik.db
+      JWT_ACCESS_SECRET: dev-access-secret-change-me
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-me
+      SEED_ADMIN_USERNAME: admin
+      SEED_ADMIN_PASSWORD: kapalbaja
+    volumes:
+      - simdik-dev-data:/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  simdik-dev-data:
