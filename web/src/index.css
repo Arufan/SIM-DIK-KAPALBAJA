@@ -1,13 +1,43 @@
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/saira";
+@import "@fontsource-variable/jetbrains-mono";
 @import "tailwindcss";
 
-html, body, #root { height: 100%; }
-body { @apply bg-[#f4f6f8] text-slate-800 antialiased; }
+/* Brand tokens — matched to kapalbaja.web.id */
+@theme {
+  --color-forest-950: #071c14; /* hero / header near-black green */
+  --color-forest-900: #0b2b1e; /* secondary dark surface */
+  --color-forest-700: #1e6943; /* signature brand green */
+  --color-kuning: #f4d52f; /* signature yellow */
+  --color-paper: #fbfaf5; /* cream body background */
+  --color-paper-2: #f2f1e9; /* alternate light surface */
+  --color-ink: #101814; /* primary text */
+  --color-sage: #657168; /* muted text */
 
-/* thin scrollbars for the data tables */
+  --font-display: "Saira Variable", "Arial Narrow", sans-serif;
+  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+}
+
+html, body, #root { height: 100%; }
+body {
+  @apply bg-paper text-ink font-sans antialiased;
+  background-image:
+    linear-gradient(rgba(7, 28, 20, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(7, 28, 20, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* mono uppercase label, like the site's eyebrows */
+.label-mono {
+  @apply font-mono text-[11px] font-semibold uppercase tracking-[0.14em];
+}
+
 .thin-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
-.thin-scroll::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
+.thin-scroll::-webkit-scrollbar-thumb { @apply bg-forest-900/25 rounded-full; }
 
 @media print {
+  body { background: white; background-image: none; }
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
   .print-area { position: absolute; inset: 0; margin: 0; box-shadow: none !important; }

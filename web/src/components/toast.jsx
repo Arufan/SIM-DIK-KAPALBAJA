@@ -22,7 +22,7 @@ export function ToastHost() {
         <div
           key={t.id}
           className={`rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg ${
-            t.kind === "error" ? "bg-red-600 text-white" : "bg-slate-900 text-white"
+            t.kind === "error" ? "bg-red-600 text-white" : "bg-forest-950 text-white border-l-2 border-kuning"
           }`}
         >
           {t.message}

@@ -26,9 +26,9 @@ export function RaporModal({ caangId, onClose }) {
         <div className="p-6">
           <div className="print-area border border-slate-200 rounded-xl p-6 text-sm">
             <div className="text-center mb-4">
-              <p className="font-serif font-bold text-lg text-[#14532d]">UKM KAPAL BAJA</p>
+              <p className="font-display font-bold uppercase text-lg text-forest-950">UKM KAPAL BAJA</p>
               <p className="text-[11px] tracking-wide text-slate-500">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</p>
-              <p className="mt-2 inline-block rounded bg-emerald-50 px-4 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
+              <p className="mt-2 inline-block rounded bg-kuning/20 px-4 py-1 label-mono text-forest-950 border border-kuning">
                 RAPOR EVALUASI AKUMULATIF MINGGUAN
               </p>
             </div>
@@ -52,14 +52,14 @@ export function RaporModal({ caangId, onClose }) {
                     <td className="px-3 py-1.5 text-center font-semibold">{stats.count ? v : "-"}</td>
                   </tr>
                 ))}
-                <tr className="bg-emerald-50">
+                <tr className="bg-kuning/15">
                   <td className="px-3 py-2 text-center font-bold text-emerald-800">SKOR AKUMULATIF AKHIR:</td>
-                  <td className="px-3 py-2 text-center font-bold text-emerald-700">{stats.count ? stats.totalAvg : "-"}</td>
+                  <td className="px-3 py-2 text-center font-bold text-forest-700">{stats.count ? stats.totalAvg : "-"}</td>
                 </tr>
               </tbody>
             </table>
             <div className="mt-4 space-y-1 text-slate-700">
-              <p>Status Pembinaan: <b className="text-emerald-700">{stats.status}</b></p>
+              <p>Status Pembinaan: <b className="text-forest-700">{stats.status}</b></p>
               <p>Jumlah Evaluasi Terekam: <b>{stats.count} Pertemuan Minggu</b></p>
               {(["uji_kampus", "diksar", "diklat"]).map((s) => {
                 const r = stageRow(s);
@@ -73,7 +73,7 @@ export function RaporModal({ caangId, onClose }) {
             </div>
           </div>
           <div className="mt-5 flex justify-end gap-2 print:hidden">
-            <button onClick={() => window.print()} className="rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">🖨️ Cetak / Simpan PDF</button>
+            <button onClick={() => window.print()} className="rounded-lg bg-forest-950 px-4 py-2.5 label-mono text-kuning hover:brightness-125">🖨️ Cetak / Simpan PDF</button>
             <button onClick={onClose} className="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200">Tutup</button>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function Ranking({ openModal }) {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-xl shadow-sm p-5 flex flex-wrap items-center gap-3">
+      <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-5 flex flex-wrap items-center gap-3">
         <div>
           <h2 className="font-bold text-slate-800">🏆 Papan Ranking Standar Caang KAPALBAJA</h2>
           <p className="text-xs text-slate-400">Peringkat dihitung otomatis berdasarkan akumulasi rata-rata evaluasi mingguan.</p>
@@ -115,10 +115,10 @@ export default function Ranking({ openModal }) {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-x-auto thin-scroll">
+      <div className="bg-white rounded-md border border-forest-950/10 shadow-sm overflow-x-auto thin-scroll">
         <table className="w-full text-sm min-w-[900px]">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-white bg-emerald-900">
+            <tr className="text-left text-xs uppercase tracking-wide text-white bg-forest-950">
               <th className="py-3 px-3">Rank</th>
               <th className="py-3 px-3">NPM</th>
               <th className="py-3 px-3">Nama & Fakultas/Prodi</th>
@@ -151,14 +151,14 @@ export default function Ranking({ openModal }) {
                 <td className="py-2.5 px-3">{r.stats.count ? r.stats.surv : "-"}</td>
                 <td className="py-2.5 px-3">{r.stats.count ? r.stats.team : "-"}</td>
                 <td className="py-2.5 px-3">{r.stats.count ? r.stats.fisik : "-"}</td>
-                <td className="py-2.5 px-3 font-bold text-emerald-700">{r.stats.count ? r.stats.totalAvg : "-"}</td>
+                <td className="py-2.5 px-3 font-bold text-forest-700">{r.stats.count ? r.stats.totalAvg : "-"}</td>
                 <td className="py-2.5 px-3">
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[r.stats.status]}`}>{r.stats.status}</span>
                 </td>
                 <td className="py-2.5 px-3">
                   <button
                     onClick={() => { if (r.stats.count === 0) { showToast("Belum ada evaluasi untuk rapor", "error"); return; } openModal({ type: "rapor", caangId: r.c.id }); }}
-                    className="rounded-lg bg-emerald-900 text-white text-xs font-semibold px-3 py-1.5 hover:bg-emerald-800"
+                    className="rounded-lg bg-forest-950 text-kuning label-mono px-3 py-1.5 hover:brightness-125 border border-kuning/40"
                   >
                     📕 Rapor
                   </button>

@@ -9,7 +9,7 @@ import { showToast } from "./toast.jsx";
 
 ChartJS.register(RadialLinearScale, CategoryScale, Tooltip, Filler, RadarController, PointElement, LineElement);
 
-const BAR_COLORS = ["bg-emerald-500", "bg-teal-500", "bg-red-500", "bg-amber-500", "bg-blue-600", "bg-purple-500"];
+const BAR_COLORS = ["bg-[#1E6943]", "bg-[#0B2B1E]", "bg-[#4E9463]", "bg-[#F4D52F]", "bg-[#657168]", "bg-[#B8912B]"];
 
 export default function Profile({ selectedCaangId, setSelectedCaangId, openModal }) {
   const [q, setQ] = useState("");
@@ -29,20 +29,20 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
     datasets: [{
       label: "Skor",
       data: stats ? BIDANG.map((b) => stats[b.key]) : [],
-      backgroundColor: "rgba(16,185,129,0.2)",
-      borderColor: "#059669",
+      backgroundColor: "rgba(244,213,47,0.24)",
+      borderColor: "#F4D52F",
       borderWidth: 2,
-      pointBackgroundColor: "#059669",
+      pointBackgroundColor: "#F4D52F",
     }],
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       {/* picker */}
-      <div className="bg-white rounded-xl shadow-sm p-4 h-fit">
+      <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-4 h-fit">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold tracking-wide text-slate-500 uppercase">👥 Pilih Calon Anggota</h2>
-          <button onClick={() => openModal({ type: "caang" })} className="text-xs font-semibold text-emerald-700 hover:underline">+ Baru</button>
+          <button onClick={() => openModal({ type: "caang" })} className="text-xs font-semibold text-forest-700 hover:underline">+ Baru</button>
         </div>
         <input
           value={q}
@@ -59,11 +59,11 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
               <button
                 key={c.id}
                 onClick={() => setSelectedCaangId(c.id)}
-                className={`w-full text-left rounded-lg border px-3 py-2.5 ${active ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:bg-slate-50"}`}
+                className={`w-full text-left rounded-lg border px-3 py-2.5 ${active ? "border-kuning bg-kuning/10" : "border-slate-200 hover:bg-slate-50"}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold text-slate-800">{c.nama}</span>
-                  {s.count > 0 && <span className="text-sm font-bold text-emerald-700">{s.totalAvg}</span>}
+                  {s.count > 0 && <span className="text-sm font-bold text-forest-700">{s.totalAvg}</span>}
                 </div>
                 <div className="text-xs text-slate-400">NPM: {c.npm} • {c.prodi}</div>
               </button>
@@ -74,14 +74,14 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
 
       {/* detail */}
       {!selected ? (
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-10 text-center text-slate-400 text-sm">
+        <div className="lg:col-span-2 bg-white rounded-md border border-forest-950/10 shadow-sm p-10 text-center text-slate-400 text-sm">
           Pilih atau tambahkan calon anggota untuk melihat skill matrix.
         </div>
       ) : (
         <div className="lg:col-span-2 space-y-5">
-          <div className="bg-white rounded-xl shadow-sm p-5">
+          <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-5">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-[#14532d] text-white flex items-center justify-center text-xl font-bold">
+              <div className="w-16 h-16 rounded-full bg-forest-950 text-white flex items-center justify-center text-xl font-bold">
                 {selected.nama.split(" ").map((w) => w[0]).slice(0, 2).join("")}
               </div>
               <div className="flex-1 min-w-0">
@@ -94,7 +94,7 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
               </div>
               <div className="text-right">
                 <p className="text-xs font-semibold tracking-wider text-slate-400 uppercase">Skor Kumulatif</p>
-                <p className="text-3xl font-bold text-emerald-700">{stats.count > 0 ? stats.totalAvg : "-"}</p>
+                <p className="text-3xl font-bold text-forest-700">{stats.count > 0 ? stats.totalAvg : "-"}</p>
               </div>
             </div>
 
@@ -130,12 +130,12 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-5">
+          <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-slate-800">Riwayat Penilaian Mentor Mingguan</h3>
               <button
                 onClick={() => openModal({ type: "eval", caangId: selected.id })}
-                className="rounded-lg bg-emerald-700 text-white text-xs font-semibold px-3 py-2 hover:bg-emerald-600"
+                className="rounded-lg bg-emerald-700 text-white text-xs font-semibold px-3 py-2 hover:brightness-95 bg-kuning text-forest-950"
               >
                 + Input Nilai Minggu Ini
               </button>
@@ -170,7 +170,7 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
                       <td className="py-2 pr-3">{e.survivalT}/{e.survivalP}</td>
                       <td className="py-2 pr-3">{e.buddy}/{e.team}</td>
                       <td className="py-2 pr-3">{e.fisikScore ?? fisikScore(e.runMin, e.pushUp, e.pullUp)}</td>
-                      <td className="py-2 pr-3 font-bold text-emerald-700">{e.avg ?? weeklyTotal(e)}</td>
+                      <td className="py-2 pr-3 font-bold text-forest-700">{e.avg ?? weeklyTotal(e)}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">
                         <button onClick={() => openModal({ type: "eval", edit: e })} className="mr-1" title="Edit">✏️</button>
                         <button

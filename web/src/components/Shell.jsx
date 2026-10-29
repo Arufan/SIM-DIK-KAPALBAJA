@@ -15,36 +15,30 @@ import Ranking from "./Ranking.jsx";
 function SyncBadge() {
   const { pending, lastSync, online, syncing } = useSyncStatus();
   const label = !online
-    ? "Offline — data aman di perangkat"
+    ? "OFFLINE · DATA AMAN"
     : syncing
-      ? "Menyinkronkan…"
+      ? "SINKRONISASI…"
       : pending > 0
-        ? `${pending} perubahan belum tersinkron`
+        ? `${pending} BELUM TERSINKRON`
         : lastSync
-          ? `Tersinkron ${new Date(lastSync).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
-          : "Belum tersinkron";
-  const color = !online ? "bg-slate-200 text-slate-600" : pending > 0 || syncing ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700";
+          ? `TERSINKRON ${new Date(lastSync).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+          : "BELUM TERSINKRON";
+  const cls = !online
+    ? "bg-white/10 text-white/70 border-white/20"
+    : pending > 0 || syncing
+      ? "bg-kuning/20 text-kuning border-kuning/50"
+      : "bg-forest-700/40 text-emerald-200 border-emerald-300/30";
   return (
     <button
       onClick={() => sync()}
       title="Klik untuk sinkron sekarang"
-      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${color} print:hidden`}
+      className={`flex items-center gap-1.5 rounded-sm border px-3 py-1.5 label-mono ${cls} print:hidden`}
     >
-      <span className={`w-2 h-2 rounded-full ${!online ? "bg-slate-400" : pending > 0 || syncing ? "bg-amber-500 animate-pulse" : "bg-emerald-500"}`} />
+      <span className={`h-1.5 w-1.5 rounded-full ${!online ? "bg-white/40" : pending > 0 || syncing ? "bg-kuning animate-pulse" : "bg-kuning"}`} />
       {label}
     </button>
   );
 }
-
-export const TABS = [
-  { id: "dashboard", label: "Dashboard Utama", icon: "📊" },
-  { id: "profile", label: "Profile & Skill Matrix", icon: "🗂️" },
-  { id: "mingguan", label: "Evaluasi Mingguan (14 Mgg)", icon: "📝" },
-  { id: "uji_kampus", label: "Uji Kompetensi Kampus", icon: "🎓" },
-  { id: "diksar", label: "Evaluasi Diksar Penjelajah", icon: "✅" },
-  { id: "diklat", label: "Evaluasi Diklat Penjelajah", icon: "⛰️" },
-  { id: "ranking", label: "Ranking Standar & Rapor", icon: "🏆" },
-];
 
 function InstallButton() {
   const [ev, setEv] = useState(null);
@@ -57,7 +51,7 @@ function InstallButton() {
   return (
     <button
       onClick={async () => { await ev.prompt(); setEv(null); }}
-      className="rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1.5 hover:bg-emerald-200 print:hidden"
+      className="rounded-sm border border-kuning/60 bg-kuning/10 px-3 py-1.5 label-mono text-kuning hover:bg-kuning/20 print:hidden"
       title="Pasang aplikasi ke home screen — bekerja offline"
     >
       📲 Install
@@ -65,13 +59,21 @@ function InstallButton() {
   );
 }
 
+export const TABS = [
+  { id: "dashboard", label: "Dashboard", icon: "📊" },
+  { id: "profile", label: "Profile & Skill", icon: "🗂️" },
+  { id: "mingguan", label: "Evaluasi Mingguan", icon: "📝" },
+  { id: "uji_kampus", label: "Uji Kampus", icon: "🎓" },
+  { id: "diksar", label: "Diksar", icon: "✅" },
+  { id: "diklat", label: "Diklat", icon: "⛰️" },
+  { id: "ranking", label: "Ranking & Rapor", icon: "🏆" },
+];
+
 export default function Shell({ profile, onLogout }) {
   const [tab, setTab] = useState("dashboard");
-  const [modal, setModal] = useState(null); // { type: "caang" | "eval" | "stage", ... }
+  const [modal, setModal] = useState(null); // { type: "caang" | "eval" | "stage" | "rapor", ... }
   const [selectedCaangId, setSelectedCaangId] = useState(null);
   const { online } = useSyncStatus();
-
-  const caangCount = useLiveQuery(() => db.caang.filter((c) => !c.deletedAt).count(), [], 0);
 
   async function handleLogout() {
     if (!confirm("Logout dari sistem? Data offline tetap tersimpan di perangkat.")) return;
@@ -79,61 +81,61 @@ export default function Shell({ profile, onLogout }) {
     onLogout();
   }
 
-  const tabProps = {
-    setTab,
-    selectedCaangId,
-    setSelectedCaangId,
-    openModal: setModal,
-  };
+  const tabProps = { setTab, selectedCaangId, setSelectedCaangId, openModal: setModal };
 
   return (
     <div className="min-h-full flex flex-col">
       {/* header */}
-      <header className="bg-white px-4 sm:px-6 py-3 flex items-center gap-3 shadow-sm print:hidden">
-        <div className="w-11 h-11 rounded-full bg-[#14532d] border-4 border-amber-400 flex items-center justify-center shrink-0">
-          <svg viewBox="0 0 24 24" className="w-6 h-6 text-amber-400" fill="currentColor">
+      <header className="bg-forest-950 px-4 sm:px-6 py-3 flex items-center gap-3 border-b-2 border-kuning print:hidden">
+        <div className="w-11 h-11 rounded-full bg-forest-900 border-[3px] border-kuning flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 24 24" className="w-6 h-6 text-kuning" fill="currentColor">
             <path d="M3 14l2-6h14l2 6-9 4-9-4zm2 6h14v2H5v-2z" />
           </svg>
         </div>
-        <h1 className="font-serif font-bold text-2xl sm:text-3xl text-slate-900 tracking-wide">SDM KAPAL BAJA</h1>
+        <div className="leading-tight">
+          <h1 className="font-display font-bold uppercase text-2xl sm:text-3xl text-white tracking-wide">SDM Kapal Baja</h1>
+          <p className="label-mono text-kuning/90 hidden sm:block">Sistem Monitoring Diklat · Ubhara Jaya</p>
+        </div>
         <div className="ml-auto flex items-center gap-2">
           <InstallButton />
           <SyncBadge />
-          <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-emerald-900 text-white text-xs font-semibold px-3 py-1.5">
-            <span>👤</span> {profile.displayName}
+          <div className="hidden md:flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/5 px-3 py-1.5 label-mono text-white/90">
+            {profile.displayName}
           </div>
-          <button onClick={handleLogout} className="rounded-full bg-red-700 text-white text-xs font-semibold px-3 py-1.5 hover:bg-red-800">
+          <button onClick={handleLogout} className="rounded-sm border border-kuning/60 bg-kuning text-forest-950 label-mono px-3 py-1.5 hover:brightness-95">
             Logout
           </button>
         </div>
       </header>
 
       {/* action bar */}
-      <div className="bg-[#14532d] px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-end gap-2 print:hidden">
-        {!online && <span className="text-xs text-amber-300 mr-auto">Mode offline — input tetap jalan, sinkron otomatis nanti</span>}
+      <div className="bg-forest-950 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-end gap-2 border-b border-white/10 print:hidden">
+        {!online && <span className="label-mono text-kuning/80 mr-auto">Mode offline — input tetap jalan</span>}
         <button
           onClick={() => setModal({ type: "caang" })}
-          className="rounded-full bg-emerald-600 text-white text-sm font-semibold px-4 py-1.5 hover:bg-emerald-500"
+          className="rounded-sm bg-kuning px-4 py-2 label-mono text-forest-950 hover:brightness-95"
         >
-          ➕ Tambah Caang
+          + Tambah Caang →
         </button>
         <button
           onClick={() => setModal({ type: "eval" })}
-          className="rounded-full bg-amber-500 text-white text-sm font-semibold px-4 py-1.5 hover:bg-amber-400"
+          className="rounded-sm border border-white/25 bg-white/5 px-4 py-2 label-mono text-white hover:border-kuning/60 hover:text-kuning"
         >
-          ✍️ + Input Evaluasi
+          + Input Evaluasi →
         </button>
       </div>
 
       {/* tabs */}
-      <nav className="bg-white border-b border-slate-200 px-2 sm:px-4 overflow-x-auto thin-scroll print:hidden">
+      <nav className="bg-forest-950 border-b border-white/10 px-2 sm:px-4 overflow-x-auto thin-scroll print:hidden">
         <div className="flex space-x-1 min-w-max">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`py-3 px-3 text-sm font-medium border-b-2 whitespace-nowrap ${
-                tab === t.id ? "border-emerald-700 text-emerald-800" : "border-transparent text-slate-500 hover:text-slate-700"
+              className={`py-3 px-3 label-mono whitespace-nowrap border-b-2 ${
+                tab === t.id
+                  ? "border-kuning text-kuning"
+                  : "border-transparent text-white/60 hover:text-white"
               }`}
             >
               <span className="mr-1">{t.icon}</span>

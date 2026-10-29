@@ -8,7 +8,7 @@ import { showToast } from "./toast.jsx";
 function Modal({ title, children, onClose, wide }) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-start justify-center overflow-y-auto p-4">
-      <div className={`w-full ${wide ? "max-w-3xl" : "max-w-lg"} bg-white rounded-2xl shadow-2xl my-6`}>
+      <div className={`w-full ${wide ? "max-w-3xl" : "max-w-lg"} bg-paper rounded-md shadow-2xl my-6`}>
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="font-bold text-slate-800">{title}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
@@ -78,8 +78,8 @@ export function CaangModal({ edit, onClose }) {
           <Field label="Nama Mentor *"><input className={inputCls} placeholder="Mentor" value={f.mentorNama} onChange={set("mentorNama")} /></Field>
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200">Batal</button>
-          <button type="submit" className="rounded-lg bg-[#14532d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">Simpan Profile</button>
+          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-2.5 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
+          <button type="submit" className="rounded-sm bg-kuning px-5 py-2.5 label-mono text-forest-950 hover:brightness-95">Simpan Profile</button>
         </div>
       </form>
     </Modal>
@@ -170,7 +170,7 @@ export function WeeklyEvalModal({ edit, caangId, onClose }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <ScorePair label="🧭 Navigasi Darat" color="text-emerald-700" t={f.navdarT} p={f.navdarP} setT={set("navdarT")} setP={set("navdarP")} />
+          <ScorePair label="🧭 Navigasi Darat" color="text-forest-700" t={f.navdarT} p={f.navdarP} setT={set("navdarT")} setP={set("navdarP")} />
           <ScorePair label="🪢 Tali Menali" color="text-teal-700" t={f.taliT} p={f.taliP} setT={set("taliT")} setP={set("taliP")} />
           <ScorePair label="🩹 PPGD" color="text-red-600" t={f.ppgdT} p={f.ppgdP} setT={set("ppgdT")} setP={set("ppgdP")} />
           <ScorePair label="🏕️ Survival" color="text-amber-700" t={f.survivalT} p={f.survivalP} setT={set("survivalT")} setP={set("survivalP")} />
@@ -185,7 +185,7 @@ export function WeeklyEvalModal({ edit, caangId, onClose }) {
             </div>
           </div>
           <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-            <p className="text-xs font-bold mb-2 text-purple-700">🏃 Penilaian Tes Fisik {fisik != null && <span className="ml-1 rounded bg-purple-100 px-2 py-0.5 text-purple-800">Skor: {fisik}</span>}</p>
+            <p className="text-xs font-bold mb-2 text-purple-700">🏃 Penilaian Tes Fisik {fisik != null && <span className="ml-1 rounded bg-kuning/30 px-2 py-0.5 text-forest-950">Skor: {fisik}</span>}</p>
             <div className="grid grid-cols-3 gap-2">
               <Field label="Lari 3Km (Menit)"><input type="number" step="0.1" min="0" className={inputCls} value={f.runMin} onChange={set("runMin")} /></Field>
               <Field label="Push-Up (Reps)"><input type="number" min="0" className={inputCls} value={f.pushUp} onChange={set("pushUp")} /></Field>
@@ -199,12 +199,12 @@ export function WeeklyEvalModal({ edit, caangId, onClose }) {
         </Field>
 
         {preview != null && (
-          <p className="text-sm text-slate-500">Pratinjau total minggu ini: <b className="text-emerald-700">{preview}</b></p>
+          <p className="text-sm text-slate-500">Pratinjau total minggu ini: <b className="text-forest-700">{preview}</b></p>
         )}
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200">Batal</button>
-          <button type="submit" className="rounded-lg bg-[#14532d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">Simpan Evaluasi</button>
+          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-2.5 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
+          <button type="submit" className="rounded-sm bg-kuning px-5 py-2.5 label-mono text-forest-950 hover:brightness-95">Simpan Evaluasi</button>
         </div>
       </form>
     </Modal>
@@ -227,7 +227,7 @@ export function StageModal({ stage, edit, onClose }) {
   }));
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
   const pairs = [
-    ["navdarT", "navdarP", "🧭 Navdar", "text-emerald-700"],
+    ["navdarT", "navdarP", "🧭 Navdar", "text-forest-700"],
     ["taliT", "taliP", "🪢 Tali", "text-teal-700"],
     ["ppgdT", "ppgdP", "🩹 PPGD", "text-red-600"],
     ["survivalT", "survivalP", "🏕️ Survival", "text-amber-700"],
@@ -275,8 +275,8 @@ export function StageModal({ stage, edit, onClose }) {
           <input className={inputCls} placeholder="Contoh: Lanjut Ke Diksar / Anggota Muda" value={f.keterangan} onChange={set("keterangan")} />
         </Field>
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200">Batal</button>
-          <button type="submit" className="rounded-lg bg-[#14532d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800">Simpan Penilaian</button>
+          <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-2.5 label-mono text-forest-900 hover:bg-paper-2">Batal</button>
+          <button type="submit" className="rounded-sm bg-kuning px-5 py-2.5 label-mono text-forest-950 hover:brightness-95">Simpan Penilaian</button>
         </div>
       </form>
     </Modal>

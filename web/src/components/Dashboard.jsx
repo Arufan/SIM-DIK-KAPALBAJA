@@ -10,11 +10,11 @@ const CARD_COLORS = ["text-emerald-600", "bg-emerald-100", "text-amber-600", "bg
 
 function StatCard({ label, value, sub, icon, tone }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 flex items-start justify-between">
+    <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-5 flex items-start justify-between">
       <div>
-        <p className="text-xs font-semibold tracking-wider text-slate-400 uppercase">{label}</p>
-        <p className={`mt-1 text-3xl font-bold ${tone?.text ?? "text-slate-900"}`}>{value}</p>
-        <p className="mt-1 text-xs text-slate-500">{sub}</p>
+        <p className="label-mono text-sage">{label}</p>
+        <p className={`mt-1 text-3xl font-display font-bold ${tone?.text ?? "text-slate-900"}`}>{value}</p>
+        <p className="mt-1 text-xs text-sage">{sub}</p>
       </div>
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${tone?.bg ?? "bg-slate-100"}`}>{icon}</div>
     </div>
@@ -38,7 +38,7 @@ export default function Dashboard({ setTab, setSelectedCaangId }) {
   });
 
   const top = [...scored].sort((a, b) => b.stats.totalAvg - a.stats.totalAvg).slice(0, 3);
-  const rankColor = ["bg-amber-400 text-white", "bg-slate-300 text-slate-700", "bg-orange-400 text-white"];
+  const rankColor = ["bg-kuning text-forest-950", "bg-forest-950 text-white", "bg-forest-700 text-white"];
 
   return (
     <div className="space-y-5">
@@ -50,10 +50,10 @@ export default function Dashboard({ setTab, setSelectedCaangId }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-5">
+        <div className="lg:col-span-2 bg-white rounded-md border border-forest-950/10 shadow-sm p-5">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="font-bold text-slate-800">📶 Distribusi Rata-Rata Nilai per Bidang</h2>
-            <span className="text-xs text-slate-400">Kumulatif Angkatan</span>
+            <h2 className="font-bold text-ink">📶 Distribusi Rata-Rata Nilai per Bidang</h2>
+            <span className="text-xs text-sage">Kumulatif Angkatan</span>
           </div>
           <div className="h-72">
             <Bar
@@ -61,7 +61,7 @@ export default function Dashboard({ setTab, setSelectedCaangId }) {
                 labels: BIDANG.map((b) => b.short),
                 datasets: [{
                   data: perBidang,
-                  backgroundColor: ["#10b981", "#14b8a6", "#ef4444", "#f59e0b", "#3b82f6", "#8b5cf6"],
+                  backgroundColor: ["#F4D52F", "#1E6943", "#0B2B1E", "#4E9463", "#657168", "#B8912B"],
                   borderRadius: 4,
                 }],
               }}
@@ -75,10 +75,10 @@ export default function Dashboard({ setTab, setSelectedCaangId }) {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <h2 className="font-bold text-slate-800 mb-4">👑 Top Performer Calon Anggota</h2>
+        <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-5">
+          <h2 className="font-bold text-ink mb-4">👑 Top Performer Calon Anggota</h2>
           <div className="space-y-2.5">
-            {top.length === 0 && <p className="text-sm text-slate-400">Belum ada penilaian tercatat.</p>}
+            {top.length === 0 && <p className="text-sm text-sage">Belum ada penilaian tercatat.</p>}
             {top.map((s, i) => (
               <button
                 key={s.caang.id}
@@ -87,8 +87,8 @@ export default function Dashboard({ setTab, setSelectedCaangId }) {
               >
                 <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${rankColor[i] ?? "bg-slate-200"}`}>{i + 1}</span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-semibold text-slate-800 truncate">{s.caang.nama}</span>
-                  <span className="block text-xs text-slate-400 truncate">{s.caang.prodi} • NPM: {s.caang.npm}</span>
+                  <span className="block text-sm font-semibold text-ink truncate">{s.caang.nama}</span>
+                  <span className="block text-xs text-sage truncate">{s.caang.prodi} • NPM: {s.caang.npm}</span>
                 </span>
                 <span className="text-sm font-bold text-emerald-700">{s.stats.totalAvg} Pts</span>
               </button>

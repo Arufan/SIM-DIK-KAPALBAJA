@@ -4,8 +4,10 @@
 import { deflateSync } from "node:zlib";
 import { mkdirSync, writeFileSync } from "node:fs";
 
-const GREEN = [20, 83, 45]; // #14532d
-const AMBER = [251, 191, 36]; // #fbbf24
+// Brand colors — matched to kapalbaja.web.id
+const GREEN = [11, 43, 30]; // #0B2B1E disc
+const BG = [7, 28, 20]; // #071C14 full-bleed background (maskable/splash)
+const AMBER = [244, 213, 47]; // #F4D52F signature yellow
 const WHITE = [255, 255, 255];
 
 // Ship glyph from the app logo (24-unit viewBox):
@@ -65,7 +67,7 @@ function render(size, { maskable }) {
       const i = (y * size + x) * 4;
       if (maskable) {
         // full-bleed background, content confined to safe zone
-        setPx(i, GREEN, 1);
+        setPx(i, BG, 1);
         const ring = circleCoverage(x, y, size, ringOuter, ss) - circleCoverage(x, y, size, discR, ss);
         if (ring > 0) setPx(i, AMBER, Math.min(1, ring));
         const ship = shipCoverage(x, y, size, ss);

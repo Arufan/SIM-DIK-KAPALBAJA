@@ -15,8 +15,8 @@ export default defineConfig({
         short_name: "SIM-DIK KB",
         description: "Sistem Monitoring Pendidikan Calon Anggota — UKM Kapal Baja",
         lang: "id",
-        theme_color: "#14532d",
-        background_color: "#f4f6f8",
+        theme_color: "#071c14",
+        background_color: "#071c14",
         display: "standalone",
         start_url: "/",
         icons: [
