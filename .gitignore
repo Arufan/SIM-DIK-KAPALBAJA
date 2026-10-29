@@ -1,0 +1,40 @@
+# Node
+node_modules/
+dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+keystore/
+*.jks
+*.keystore
+
+# Local databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+
+# Capacitor / Android
+android/.capacitor/
+android/app/build/
+android/build/
+android/local.properties
+android/.gradle/
+android/capacitor-cordova-android-plugins/
+*.apk
+*.aab
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,103 @@
+// SIM-DIK KAPALBAJA data model — plan §4
+// IDs are UUIDv4 generated on the client so offline devices can create rows
+// without collisions; deletedAt = soft delete so deletes sync too.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  role         String   @default("mentor") // admin | mentor
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  caang Caang[]
+}
+
+model Caang {
+  id        String    @id // client UUIDv4
+  npm       String
+  nama      String
+  fakultas  String
+  prodi     String
+  angkatan  String
+  mentorId  String?
+  mentor    User?     @relation(fields: [mentorId], references: [id])
+  status    String    @default("aktif") // aktif | lulus_standar | perlu_evaluasi | anggota_muda
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  weeklyEvals WeeklyEval[]
+  stageEvals  StageEval[]
+
+  @@index([mentorId])
+  @@index([angkatan])
+  @@index([status])
+}
+
+model WeeklyEval {
+  id         String    @id // client UUIDv4
+  caangId    String
+  caang      Caang     @relation(fields: [caangId], references: [id])
+  weekNo     Int // 1..14
+  tanggal    String // ISO date
+  navdarT    Float
+  navdarP    Float
+  taliT      Float
+  taliP      Float
+  ppgdT      Float
+  ppgdP      Float
+  survivalT  Float
+  survivalP  Float
+  buddy      Float
+  team       Float
+  runMin     Float // lari 3km, menit
+  pushUp     Int
+  pullUp     Int
+  fisikScore Float // derived, computed on write (shared scoring module)
+  avg        Float // derived weekly average
+  catatan    String?
+  mentorId   String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  @@unique([caangId, weekNo])
+}
+
+model StageEval {
+  id        String    @id // client UUIDv4
+  caangId   String
+  caang     Caang     @relation(fields: [caangId], references: [id])
+  stage     String // uji_kampus | diksar | diklat
+  penguji   String
+  tanggal   String // ISO date
+  navdarT   Float
+  navdarP   Float
+  taliT     Float
+  taliP     Float
+  ppgdT     Float
+  ppgdP     Float
+  survivalT Float
+  survivalP Float
+  mppT      Float
+  mppP      Float
+  rata      Float // derived
+  keterangan String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([caangId, stage])
+}

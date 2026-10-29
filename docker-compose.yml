@@ -1,0 +1,32 @@
+services:
+  api:
+    build: ./api
+    container_name: simdik-api
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: file:/data/simdik.db
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set in .env}
+    volumes:
+      - api-data:/data
+    ports:
+      # Cloudflare Tunnel points at this localhost port; not exposed publicly
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional: run the tunnel on the same host instead of a separate service
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - api
+
+volumes:
+  api-data:

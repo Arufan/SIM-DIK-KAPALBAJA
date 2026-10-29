@@ -1,0 +1,137 @@
+// Phase 1 exit test: run against a live dev server.
+//   node --env-file=.env scripts/smoke-sync.mjs [baseUrl]
+// Exercises: login, scoring parity, push/pull, LWW conflict, unique-week
+// collision, soft-delete tombstones. Exits non-zero on the first failure.
+
+const BASE = process.argv[2] || "http://127.0.0.1:8080";
+
+let failures = 0;
+function check(name, cond, extra = "") {
+  if (cond) console.log(`  PASS  ${name}`);
+  else {
+    failures++;
+    console.error(`  FAIL  ${name} ${extra}`);
+  }
+}
+
+const uuid = () => crypto.randomUUID();
+const nowIso = () => new Date().toISOString();
+const api = async (path, { method = "GET", token, body } = {}) => {
+  const res = await fetch(BASE + path, {
+    method,
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return { status: res.status, json: await res.json().catch(() => ({})) };
+};
+
+// --- scoring parity with the original site (sample rows from the live app) ---
+const { fisikScore, weeklyTotal, stageTotal, pembinaanStatus } = await import("../src/lib/scoring.js");
+console.log("[scoring]");
+check("fisik 14.5m/35p/12p = 85", fisikScore(14.5, 35, 12) === 85);
+check("fisik 15m/30p/10p  = 73", fisikScore(15, 30, 10) === 73);
+check("fisik 18m/20p/6p  = 42", fisikScore(18, 20, 6) === 42);
+check(
+  "weekly Ahmad Mgg1 = 84.8",
+  weeklyTotal({
+    navdarT: 85, navdarP: 80, taliT: 90, taliP: 88, ppgdT: 78, ppgdP: 82,
+    survivalT: 80, survivalP: 85, buddy: 89, team: 89, fisikScore: fisikScore(14.5, 35, 12),
+  }) === 84.8,
+);
+check("stage rata = 87.2", stageTotal({ navdarT: 88, navdarP: 85, taliT: 90, taliP: 92, ppgdT: 85, ppgdP: 88, survivalT: 82, survivalP: 85, mppT: 85, mppP: 88 }) === 87.2);
+check("status >=80 Lulus Standar", pembinaanStatus(84.8, 3) === "Lulus Standar");
+check("status <70 Perlu Evaluasi", pembinaanStatus(68.3, 3) === "Perlu Evaluasi");
+
+// --- login ---
+console.log("[auth]");
+const bad = await api("/auth/login", { method: "POST", body: { username: "admin", password: "wrong" } });
+check("wrong password rejected", bad.status === 401);
+const login = await api("/auth/login", { method: "POST", body: { username: "admin", password: process.env.SEED_ADMIN_PASSWORD || "changeme123" } });
+check("login ok", login.status === 200 && !!login.json.accessToken);
+const token = login.json.accessToken;
+
+// --- push: create caang + weekly eval + stage eval ---
+console.log("[push create]");
+const caangId = uuid();
+const evalId = uuid();
+const stageId = uuid();
+const t0 = nowIso();
+
+const push1 = await api("/sync/push", {
+  method: "POST",
+  token,
+  body: {
+    deviceId: "smoke-device",
+    changes: [
+      {
+        table: "caang", op: "create",
+        row: { id: caangId, npm: "2099099", nama: "Smoke Test Caang", fakultas: "Teknik", prodi: "Informatika", angkatan: "99", status: "aktif", updatedAt: t0 },
+      },
+      {
+        table: "weekly_evals", op: "create",
+        row: { id: evalId, caangId, weekNo: 1, tanggal: "2026-10-30", navdarT: 85, navdarP: 80, taliT: 90, taliP: 88, ppgdT: 78, ppgdP: 82, survivalT: 80, survivalP: 85, buddy: 89, team: 89, runMin: 14.5, pushUp: 35, pullUp: 12, catatan: "smoke", updatedAt: t0 },
+      },
+      {
+        table: "stage_evals", op: "create",
+        row: { id: stageId, caangId, stage: "uji_kampus", penguji: "Senior Budi", tanggal: "2026-10-30", navdarT: 88, navdarP: 85, taliT: 90, taliP: 92, ppgdT: 85, ppgdP: 88, survivalT: 82, survivalP: 85, mppT: 85, mppP: 88, updatedAt: t0 },
+      },
+    ],
+  },
+});
+check("push accepted x3", push1.status === 200 && push1.json.results.every((r) => r.status === "accepted"), JSON.stringify(push1.json.results?.map((r) => r.status)));
+const pushedEval = push1.json.results[1].serverRow;
+check("server recomputed fisik=85 & avg=84.8", pushedEval?.fisikScore === 85 && pushedEval?.avg === 84.8);
+check("server recomputed stage rata=87.2", push1.json.results[2].serverRow?.rata === 87.2);
+
+// caang created by non-admin gets auto-assigned to that mentor
+const mentorLogin = await api("/auth/login", { method: "POST", body: { username: "mentor", password: process.env.SEED_ADMIN_PASSWORD || "changeme123" } });
+const pushMentor = await api("/sync/push", {
+  method: "POST", token: mentorLogin.json.accessToken,
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "create", row: { id: uuid(), npm: "2099098", nama: "Mentor Caang", fakultas: "F", prodi: "P", angkatan: "99", updatedAt: nowIso() } }] },
+});
+check("mentor-owned caang auto-assigned", pushMentor.json.results[0].status === "accepted" && pushMentor.json.results[0].serverRow.mentorId === mentorLogin.json.profile.id);
+
+// --- LWW conflict: stale update must lose ---
+console.log("[conflict]");
+const stale = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "update", row: { id: caangId, npm: "2099099", nama: "STALE WRITE", fakultas: "Teknik", prodi: "Informatika", angkatan: "99", updatedAt: "2020-01-01T00:00:00.000Z" } }] },
+});
+check("stale write -> conflict", stale.json.results[0].status === "conflict" && stale.json.results[0].serverRow.nama === "Smoke Test Caang");
+const fresh = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "update", row: { id: caangId, npm: "2099099", nama: "Smoke Test Caang v2", fakultas: "Teknik", prodi: "Informatika", angkatan: "99", updatedAt: nowIso() } }] },
+});
+check("fresh write -> accepted", fresh.json.results[0].status === "accepted");
+
+// --- unique (caangId, weekNo): second eval for week 1 with a different id ---
+console.log("[unique week]");
+const dupEval = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "another-device", changes: [{ table: "weekly_evals", op: "create", row: { id: uuid(), caangId, weekNo: 1, tanggal: "2026-10-30", navdarT: 50, navdarP: 50, taliT: 50, taliP: 50, ppgdT: 50, ppgdP: 50, survivalT: 50, survivalP: 50, buddy: 50, team: 50, runMin: 20, pushUp: 0, pullUp: 0, updatedAt: "2020-01-01T00:00:00.000Z" } }] },
+});
+check("older duplicate week -> conflict (original kept)", dupEval.json.results[0].status === "conflict" && dupEval.json.results[0].serverRow.id === evalId);
+
+// --- pull: cursor increments, rows come back, delete becomes tombstone ---
+console.log("[pull]");
+const pull1 = await api("/sync/pull?since=1970-01-01T00:00:00.000Z", { token });
+check("pull returns pushed rows", pull1.json.changes.some((c) => c.row.id === caangId) && pull1.json.changes.some((c) => c.row.id === evalId));
+check("pull cursor is ISO", !Number.isNaN(Date.parse(pull1.json.cursor)));
+const pull2 = await api(`/sync/pull?since=${encodeURIComponent(pull1.json.cursor)}`, { token });
+check("second pull empty (no new rows)", pull2.json.changes.length === 0);
+
+const del = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "smoke-device", changes: [{ table: "weekly_evals", op: "delete", row: { id: evalId, updatedAt: nowIso() } }] },
+});
+check("delete accepted", del.json.results[0].status === "accepted" && del.json.results[0].serverRow.deletedAt !== null);
+const pull3 = await api(`/sync/pull?since=${encodeURIComponent(pull2.json.cursor)}`, { token });
+check("tombstone arrives as op=delete", pull3.json.changes.some((c) => c.table === "weekly_evals" && c.op === "delete" && c.row.id === evalId));
+
+// --- browse endpoints ---
+console.log("[browse]");
+const list = await api(`/caang?q=Smoke`, { token });
+check("caang list + computed status", list.status === 200 && list.json.some((c) => c.id === caangId && c.evalCount === 0));
+
+console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
+process.exit(failures === 0 ? 0 : 1);
