@@ -133,5 +133,30 @@ console.log("[browse]");
 const list = await api(`/caang?q=Smoke`, { token });
 check("caang list + computed status", list.status === 200 && list.json.some((c) => c.id === caangId && c.evalCount === 0));
 
+// --- user center: admin CRUD + role guard ---
+console.log("[users]");
+const usersDenied = await api("/users", { token: mentorLogin.json.accessToken });
+check("mentor blocked from /users (403)", usersDenied.status === 403);
+const created = await api("/users", {
+  method: "POST", token,
+  body: { username: "smoke.user", displayName: "Smoke User", password: "password123", role: "mentor" },
+});
+check("admin creates user", created.status === 200 && created.json.username === "smoke.user");
+const dupe = await api("/users", {
+  method: "POST", token,
+  body: { username: "smoke.user", displayName: "Dup", password: "password123" },
+});
+check("duplicate username rejected (409)", dupe.status === 409);
+const asMentor = await api("/auth/login", { method: "POST", body: { username: "smoke.user", password: "password123" } });
+check("new user can login", asMentor.status === 200 && asMentor.json.profile.role === "mentor");
+const patched = await api(`/users/${created.json.id}`, { method: "PATCH", token, body: { isActive: false } });
+check("deactivate user", patched.status === 200 && patched.json.isActive === false);
+const deact = await api("/auth/login", { method: "POST", body: { username: "smoke.user", password: "password123" } });
+check("deactivated user cannot login", deact.status === 401);
+const delUser = await api(`/users/${created.json.id}`, { method: "DELETE", token });
+check("delete user", delUser.status === 200);
+const selfDel = await api(`/users/${login.json.profile.id}`, { method: "DELETE", token });
+check("self-delete rejected", selfDel.status === 400);
+
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

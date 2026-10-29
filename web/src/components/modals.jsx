@@ -7,7 +7,7 @@ import { showToast } from "./toast.jsx";
 
 // Bottom sheet on phones (thumb-reachable, native app feel), centered card on
 // desktop. Content scrolls under a sticky header; 16px inputs prevent iOS zoom.
-function Modal({ title, children, onClose, wide }) {
+export function Modal({ title, children, onClose, wide }) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-end sm:items-center sm:justify-center sm:p-4 print:hidden">
       <div className={`w-full ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"} bg-paper rounded-t-xl sm:rounded-md shadow-2xl flex flex-col max-h-[94dvh] sm:max-h-[88vh]`}>

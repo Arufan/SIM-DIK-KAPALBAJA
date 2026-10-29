@@ -9,6 +9,7 @@ import Profile from "./Profile.jsx";
 import WeeklyEvals from "./WeeklyEvals.jsx";
 import Tahapan from "./Tahapan.jsx";
 import Ranking from "./Ranking.jsx";
+import UserCenter from "./UserCenter.jsx";
 
 function SyncBadge({ compact = false }) {
   const { pending, lastSync, online, syncing } = useSyncStatus();
@@ -66,11 +67,15 @@ export const TABS = [
   { id: "ranking", label: "Ranking & Rapor", short: "Ranking", icon: "🏆" },
 ];
 
+const ADMIN_TAB = { id: "users", label: "User Center", short: "User", icon: "🔐" };
+
 export default function Shell({ profile, onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [modal, setModal] = useState(null); // { type: "caang" | "eval" | "stage" | "rapor", ... }
   const [selectedCaangId, setSelectedCaangId] = useState(null);
   const { online } = useSyncStatus();
+  const isAdmin = profile.role === "admin";
+  const tabs = isAdmin ? [...TABS, ADMIN_TAB] : TABS;
 
   async function handleLogout() {
     if (!confirm("Logout dari sistem? Data offline tetap tersimpan di perangkat.")) return;
@@ -120,7 +125,7 @@ export default function Shell({ profile, onLogout }) {
       {/* top tabs — desktop */}
       <nav className="hidden md:block bg-forest-950 border-b border-white/10 px-4 overflow-x-auto thin-scroll print:hidden">
         <div className="flex space-x-1 min-w-max">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -141,6 +146,7 @@ export default function Shell({ profile, onLogout }) {
         {tab === "tahapan" && <Tahapan {...tabProps} />}
         {tab === "profile" && <Profile {...tabProps} />}
         {tab === "ranking" && <Ranking {...tabProps} />}
+        {tab === "users" && isAdmin && <UserCenter />}
       </main>
 
       {/* FAB — the #1 field action in the thumb zone */}
@@ -155,10 +161,10 @@ export default function Shell({ profile, onLogout }) {
 
       {/* bottom tab bar — mobile */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-forest-950 border-t border-white/10 grid grid-cols-5 print:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-forest-950 border-t border-white/10 grid print:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)", gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
       >
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}

@@ -4,6 +4,7 @@ import cors from "cors";
 import { authRouter } from "./routes/auth.js";
 import { syncRouter } from "./routes/sync.js";
 import { browseRouter } from "./routes/browse.js";
+import { usersRouter } from "./routes/users.js";
 import { requireAuth } from "./middleware/auth.js";
 
 const app = express();
@@ -19,6 +20,7 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRouter);
 app.use("/sync", requireAuth, syncRouter);
 app.use("/", requireAuth, browseRouter);
+app.use("/users", requireAuth, usersRouter);
 
 const port = Number(process.env.PORT) || 8080;
 app.listen(port, () => {
