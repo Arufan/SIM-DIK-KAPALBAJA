@@ -28,7 +28,10 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
+      # Ubuntu runners ship with the Android SDK preinstalled at $ANDROID_HOME;
+      # just make sure all licenses are accepted so Gradle can auto-install gaps.
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Build PWA bundle (web assets get bundled into the APK)
         working-directory: web
