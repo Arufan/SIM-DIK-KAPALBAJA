@@ -23,8 +23,21 @@ then everything syncs to a central database when back online.
 - [x] Phase 1 — backend API + auth + data model + offline sync (smoke: `npm run smoke` in `api/`, 24 checks)
 - [x] Phase 2 — offline-first web app (all 7 screens, Dexie local DB, outbox sync, offline badge; E2E: input while API down → auto-sync on reconnect)
 - [x] Phase 3 — sync engine (server push/pull + client outbox/cursor/LWW)
-- [ ] Phase 4 — Capacitor APK + distribution
-- [ ] Phase 5 — hardening + pilot rollout
+- [x] Phase 4 — distribution: **PWA** (service worker + manifest, verified: app reloads with server down) and **Android APK** via GitHub Actions (`.github/workflows/android-apk.yml`)
+- [ ] Phase 5 — deploy to VPS + Cloudflare Tunnel, pilot rollout
+
+## Distribution (both from one codebase)
+
+**PWA (browser / iPhone):** deploy `web/dist` behind the tunnel; after one online
+visit the service worker caches everything → "Add to Home Screen" on iOS/Android
+gives an offline app. No store, no install friction.
+
+**Android APK:** pushed to `main`, GitHub Actions builds `app-debug.apk`
+(Assets → download from the Actions run). The bundled app talks to
+`VITE_API_URL` — set it as a repo **Variable** (`Settings → Secrets and
+variables → Actions → Variables`) once the production domain is live.
+Regenerate icons after changing `icons-src/icon-1024.png`:
+`node tools/make-icons.mjs && npx @capacitor/assets generate --android`.
 
 ## Quick start (full local dev)
 

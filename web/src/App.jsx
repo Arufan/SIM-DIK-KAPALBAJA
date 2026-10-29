@@ -8,7 +8,11 @@ export default function App() {
   const [profile, setProfile] = useState(() => getAuth()?.profile ?? null);
 
   useEffect(() => {
-    if (profile) sync();
+    if (profile) {
+      sync();
+      // Protect offline data: ask the browser not to evict IndexedDB under pressure.
+      navigator.storage?.persist?.().catch(() => {});
+    }
   }, [profile]);
 
   if (!profile) return <Login onDone={setProfile} />;

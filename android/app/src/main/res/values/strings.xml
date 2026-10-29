@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SIM-DIK KAPALBAJA</string>
+    <string name="title_activity_main">SIM-DIK KAPALBAJA</string>
+    <string name="package_name">id.kapalbaja.simdik</string>
+    <string name="custom_url_scheme">id.kapalbaja.simdik</string>
+</resources>

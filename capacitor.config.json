@@ -1,0 +1,8 @@
+{
+  "appId": "id.kapalbaja.simdik",
+  "appName": "SIM-DIK KAPALBAJA",
+  "webDir": "web/dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}

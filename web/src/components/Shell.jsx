@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../lib/db.js";
 import { clearAuth, getAuth } from "../lib/api.js";
@@ -46,6 +46,25 @@ export const TABS = [
   { id: "ranking", label: "Ranking Standar & Rapor", icon: "🏆" },
 ];
 
+function InstallButton() {
+  const [ev, setEv] = useState(null);
+  useEffect(() => {
+    const h = (e) => { e.preventDefault(); setEv(e); };
+    window.addEventListener("beforeinstallprompt", h);
+    return () => window.removeEventListener("beforeinstallprompt", h);
+  }, []);
+  if (!ev) return null;
+  return (
+    <button
+      onClick={async () => { await ev.prompt(); setEv(null); }}
+      className="rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1.5 hover:bg-emerald-200 print:hidden"
+      title="Pasang aplikasi ke home screen — bekerja offline"
+    >
+      📲 Install
+    </button>
+  );
+}
+
 export default function Shell({ profile, onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [modal, setModal] = useState(null); // { type: "caang" | "eval" | "stage", ... }
@@ -78,6 +97,7 @@ export default function Shell({ profile, onLogout }) {
         </div>
         <h1 className="font-serif font-bold text-2xl sm:text-3xl text-slate-900 tracking-wide">SDM KAPAL BAJA</h1>
         <div className="ml-auto flex items-center gap-2">
+          <InstallButton />
           <SyncBadge />
           <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-emerald-900 text-white text-xs font-semibold px-3 py-1.5">
             <span>👤</span> {profile.displayName}
