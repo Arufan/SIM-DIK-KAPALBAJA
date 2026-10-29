@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, live } from "../lib/db.js";
 import { weeklyTotal, fisikScore } from "../lib/scoring.js";
 import { deleteRecord } from "../lib/sync.js";
+import { exportHtmlToPdf, escapeHtml } from "../lib/exportPdf.js";
 import { showToast } from "./toast.jsx";
 
 export function downloadCsv(filename, rows) {
@@ -40,6 +41,45 @@ export default function WeeklyEvals({ openModal }) {
     ]),
   ];
 
+  async function exportPdf() {
+    if (rows.length === 0) return showToast("Belum ada data untuk diekspor", "error");
+    showToast("Membuat PDF…");
+    const rowsHtml = rows
+      .map(({ e, c }, i) => {
+        const fisik = e.fisikScore ?? fisikScore(e.runMin, e.pushUp, e.pullUp);
+        const avg = e.avg ?? weeklyTotal(e);
+        return `<tr style="background:${i % 2 ? "#f2f1e9" : "#ffffff"}">
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${i + 1}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px;font-weight:700">${escapeHtml(c.nama)}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.weekNo}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${escapeHtml(e.tanggal)}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.navdarT}/${e.navdarP}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.taliT}/${e.taliP}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.ppgdT}/${e.ppgdP}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.survivalT}/${e.survivalP}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.buddy}/${e.team}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.runMin}m/${e.pushUp}p/${e.pullUp}p</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px;font-weight:700">${avg}</td>
+        </tr>`;
+      })
+      .join("");
+    const node = document.createElement("div");
+    node.innerHTML = `
+      <div style="text-align:center;margin-bottom:10px">
+        <div style="font-family:'Saira Variable',Arial,sans-serif;font-weight:700;font-size:18px;color:#071c14;letter-spacing:0.04em">SDM KAPAL BAJA</div>
+        <div style="font-size:11px;color:#657168">FORM PENILAIAN MENTOR MINGGUAN (MINGGU 1–14) · UKM KAPAL BAJA UBHARA JAYA</div>
+      </div>
+      <table style="border-collapse:collapse;width:100%;font-size:11px">
+        <thead><tr style="background:#071c14;color:#f4d52f">
+          ${HEAD.map((h) => `<th style="border:1px solid #071c14;padding:6px 7px;text-align:left">${h}</th>`).join("")}
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <p style="font-size:10px;color:#657168;margin-top:8px">Dicetak ${new Date().toLocaleString("id-ID")} · ${rows.length} penilaian · SIM-DIK KAPALBAJA</p>`;
+    await exportHtmlToPdf(node, "evaluasi-mingguan.pdf");
+    showToast("PDF tersimpan");
+  }
+
   return (
     <div className="space-y-5">
       <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-5 flex flex-wrap items-center gap-3">
@@ -48,7 +88,10 @@ export default function WeeklyEvals({ openModal }) {
           <p className="text-xs text-slate-400">Kelola dan perbarui catatan penilaian evaluasi berkala calon anggota.</p>
         </div>
         <div className="ml-auto flex gap-2">
-          <button onClick={() => downloadCsv("evaluasi-mingguan.csv", csvRows)} className="rounded-lg bg-forest-950 text-kuning label-mono px-4 py-2.5 hover:bg-slate-700">
+          <button onClick={exportPdf} className="rounded-sm border border-forest-950/30 bg-white label-mono px-3 sm:px-4 py-2.5 text-forest-950 hover:bg-paper-2">
+            📕 Ekspor PDF
+          </button>
+          <button onClick={() => downloadCsv("evaluasi-mingguan.csv", csvRows)} className="rounded-sm bg-forest-950 text-kuning label-mono px-3 sm:px-4 py-2.5 hover:brightness-125">
             📄 Ekspor CSV
           </button>
           <button onClick={() => openModal({ type: "eval" })} className="rounded-lg bg-kuning text-forest-950 label-mono px-4 py-2.5 hover:brightness-95">

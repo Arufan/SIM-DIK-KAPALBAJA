@@ -12,6 +12,8 @@ export default function App() {
       sync();
       // Protect offline data: ask the browser not to evict IndexedDB under pressure.
       navigator.storage?.persist?.().catch(() => {});
+      // Warm the lazy html2pdf chunk so the first PDF export never races.
+      import("html2pdf.js").catch(() => {});
     }
   }, [profile]);
 

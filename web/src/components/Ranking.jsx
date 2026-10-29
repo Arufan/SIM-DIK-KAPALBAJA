@@ -1,13 +1,71 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, live } from "../lib/db.js";
 import { overallStats, STATUS_STYLES, STAGE_LULUS_THRESHOLD } from "../lib/scoring.js";
 import { downloadCsv } from "./WeeklyEvals.jsx";
+import { exportHtmlToPdf } from "../lib/exportPdf.js";
 import { showToast } from "./toast.jsx";
+
+// Pure inline-styled rapor node — html2canvas (bundled in html2pdf) cannot
+// parse Tailwind v4's oklch() colors, so PDF builders must use hex only.
+function buildRaporNode(caang, stats, stageRow) {
+  const stages = [
+    ["uji_kampus", "Uji Kompetensi Kampus"],
+    ["diksar", "Diksar Penjelajah"],
+    ["diklat", "Diklat Penjelajah"],
+  ];
+  const row = (label, v, bg = "#ffffff") =>
+    `<tr style="background:${bg}">
+      <td style="border:1px solid #cbd5e1;padding:6px 10px">${label}</td>
+      <td style="border:1px solid #cbd5e1;padding:6px 10px;text-align:center;font-weight:700">${stats.count ? v : "-"}</td>
+    </tr>`;
+  const node = document.createElement("div");
+  node.innerHTML = `
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-family:'Saira Variable',Arial,sans-serif;font-weight:700;font-size:18px;color:#071c14;letter-spacing:0.04em">UKM KAPAL BAJA</div>
+      <div style="font-size:10px;color:#657168;letter-spacing:0.06em">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</div>
+      <div style="display:inline-block;margin-top:8px;padding:4px 14px;background:#fdf6d8;border:1px solid #f4d52f;font-size:11px;font-weight:700;color:#071c14;letter-spacing:0.08em">RAPOR EVALUASI AKUMULATIF MINGGUAN</div>
+    </div>
+    <div style="font-size:12px;line-height:1.7;color:#101814;margin-bottom:12px">
+      <div>Nama Caang: <b>${escapeHtml(caang?.nama)}</b> &nbsp;·&nbsp; NPM: <b>${escapeHtml(caang?.npm)}</b></div>
+      <div>Fakultas / Prodi: <b>${escapeHtml(caang?.fakultas)} / ${escapeHtml(caang?.prodi)}</b></div>
+      <div>Angkatan / Mentor: <b>${escapeHtml(caang?.angkatan)} / ${escapeHtml(caang?.mentorNama ?? "-")}</b></div>
+    </div>
+    <table style="border-collapse:collapse;width:100%;font-size:12px">
+      <thead><tr style="background:#f2f1e9">
+        <th style="border:1px solid #cbd5e1;padding:6px 10px;text-align:left;font-size:10px;letter-spacing:0.05em">MATERI COMPETENCY MATRIX</th>
+        <th style="border:1px solid #cbd5e1;padding:6px 10px;text-align:center;font-size:10px;letter-spacing:0.05em">RATA-RATA SKOR</th>
+      </tr></thead>
+      <tbody>
+        ${row("Navigasi Darat", stats.nav)}
+        ${row("Tali Menali (Pionering)", stats.tali)}
+        ${row("PPGD (Pertolongan Pertama)", stats.ppgd)}
+        ${row("Survival", stats.surv)}
+        ${row("Body & Buddy System / Team Work", stats.team)}
+        ${row("Tes Fisik (Lari 3Km, Push-Up, Pull-Up)", stats.fisik)}
+        <tr style="background:#fdf6d8">
+          <td style="border:1px solid #cbd5e1;padding:8px 10px;text-align:center;font-weight:800;color:#071c14">SKOR AKUMULATIF AKHIR:</td>
+          <td style="border:1px solid #cbd5e1;padding:8px 10px;text-align:center;font-weight:800;color:#1e6943">${stats.count ? stats.totalAvg : "-"}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:12px;line-height:1.8;color:#101814;margin-top:12px">
+      <div>Status Pembinaan: <b style="color:#1e6943">${stats.status}</b></div>
+      <div>Jumlah Evaluasi Terekam: <b>${stats.count} Pertemuan Minggu</b></div>
+      ${stages.map(([s, label]) => {
+        const r = stageRow(s);
+        if (!r) return "";
+        const lulus = r.rata >= STAGE_LULUS_THRESHOLD;
+        return `<div>${label}: <b>${r.rata}</b> — <span style="color:${lulus ? "#1e6943" : "#b45309"}">${escapeHtml(r.keterangan ?? (lulus ? "Lulus" : "Perlu Perbaikan"))}</span></div>`;
+      }).join("")}
+    </div>
+    <p style="font-size:10px;color:#657168;margin-top:12px">Dicetak ${new Date().toLocaleString("id-ID")} · SIM-DIK KAPALBAJA</p>`;
+  return node;
+}
 
 /** Rapor Evaluasi Akumulatif — mirrors the original modal, printable via CSS. */
 export function RaporModal({ caangId, onClose }) {
-  const caang = useLiveQuery(() => db.caang.get(caangId), [], null);
+  const printRef = useRef(null);  const caang = useLiveQuery(() => db.caang.get(caangId), [], null);
   const evals = useLiveQuery(() => live("weekly_evals"), [], []);
   const stageEvals = useLiveQuery(() => live("stage_evals"), [], []);
 
@@ -24,7 +82,7 @@ export function RaporModal({ caangId, onClose }) {
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
         </div>
         <div className="p-6">
-          <div className="print-area border border-slate-200 rounded-xl p-6 text-sm">
+          <div ref={printRef} className="print-area border border-slate-200 rounded-xl p-6 text-sm">
             <div className="text-center mb-4">
               <p className="font-display font-bold uppercase text-lg text-forest-950">UKM KAPAL BAJA</p>
               <p className="text-[11px] tracking-wide text-slate-500">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</p>
@@ -73,7 +131,19 @@ export function RaporModal({ caangId, onClose }) {
             </div>
           </div>
           <div className="mt-5 flex justify-end gap-2 print:hidden">
-            <button onClick={() => window.print()} className="rounded-lg bg-forest-950 px-4 py-2.5 label-mono text-kuning hover:brightness-125">🖨️ Cetak / Simpan PDF</button>
+            <button
+              onClick={async () => {
+                try {
+                  showToast("Membuat PDF…");
+                  await exportHtmlToPdf(buildRaporNode(caang, stats, stageRow), `rapor-${caang?.nama ?? "caang"}.pdf`);
+                  showToast("PDF tersimpan");
+                } catch (e) {
+                  showToast("Gagal membuat PDF: " + (e?.message ?? "coba lagi"), "error");
+                }
+              }}
+              className="rounded-sm bg-kuning px-4 py-2.5 label-mono text-forest-950 hover:brightness-95"
+            >📕 Simpan PDF</button>
+            <button onClick={() => window.print()} className="rounded-sm bg-forest-950 px-4 py-2.5 label-mono text-kuning hover:brightness-125">🖨️ Cetak</button>
             <button onClick={onClose} className="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200">Tutup</button>
           </div>
         </div>
