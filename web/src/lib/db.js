@@ -12,6 +12,11 @@ db.version(1).stores({
   meta: "key",
 });
 
+// v2: index outbox by rowId so pull can skip rows with pending local edits.
+db.version(2).stores({
+  outbox: "++seq, rowId",
+});
+
 export const getMeta = async (key) => (await db.meta.get(key))?.value;
 export const setMeta = (key, value) => db.meta.put({ key, value });
 

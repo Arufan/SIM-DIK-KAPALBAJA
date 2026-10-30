@@ -147,6 +147,11 @@ check('skewed push accepted', skewPush.json.results[0].status === 'accepted');
 const pullSkew = await api(`/sync/pull?since=${encodeURIComponent(pull3.json.cursor)}`, { token });
 check('row with 2020 timestamp delivered after cursor', pullSkew.json.changes.some((c) => c.row.id === skewId));
 
+// --- delete wins by arrival: a slow-clock device cannot hide a row ---
+console.log("[delete wins]");
+const delOld = await api("/sync/push", { method: "POST", token, body: { deviceId: "slow-clock-device", changes: [{ table: "stage_evals", op: "delete", row: { id: stageId, updatedAt: "2019-01-01T00:00:00.000Z" } }] } });
+check("delete with 2019 timestamp accepted", delOld.json.results[0].status === "accepted" && delOld.json.results[0].serverRow.deletedAt !== null);
+
 // --- user center: admin CRUD + role guard ---
 console.log("[users]");
 const usersDenied = await api("/users", { token: mentorLogin.json.accessToken });

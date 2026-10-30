@@ -69,9 +69,15 @@ async function push() {
   const entries = await db.outbox.toArray();
   if (entries.length === 0) return;
 
+  // One change per row: the CURRENT local state is what we send (newer edits
+  // collapse into the same push).
+  const byRow = new Map();
+  for (const e of entries) if (!byRow.has(e.rowId)) byRow.set(e.rowId, e);
   const changes = [];
-  for (const e of entries) {
+  const tableOf = new Map();
+  for (const e of byRow.values()) {
     const row = await db[e.table].get(e.rowId);
+    tableOf.set(e.rowId, e.table);
     if (e.op === "delete" || !row) {
       changes.push({ table: e.table, op: "delete", row: { id: e.rowId, updatedAt: row?.updatedAt ?? new Date().toISOString() } });
     } else {
@@ -80,27 +86,72 @@ async function push() {
   }
 
   const res = await apiFetch("/sync/push", { method: "POST", body: { deviceId, changes } });
+  const resolved = new Set();
+  const rejected = [];
+  const winningRows = [];
   for (const r of res.results) {
-    if (r.serverRow) {
-      const table = changes.find((c) => c.row.id === r.id)?.table;
-      const local = table ? await db[table].get(r.id) : null;
-      const newer = !local || new Date(r.serverRow.updatedAt) >= new Date(local.updatedAt);
-      if (table && newer) await db[table].put(r.serverRow);
+    if (!tableOf.has(r.id)) continue;
+    if (r.status === "accepted" || r.status === "conflict") {
+      resolved.add(r.id);
+      if (r.serverRow) winningRows.push({ table: tableOf.get(r.id), row: r.serverRow });
+    } else {
+      rejected.push({ id: r.id, errors: r.errors ?? [] });
     }
   }
-  await db.outbox.bulkDelete(entries.map((e) => e.seq));
+
+  // Drop only resolved entries; rejected ones stay queued and are surfaced in
+  // the badge instead of vanishing silently.
+  const seqs = entries.filter((e) => resolved.has(e.rowId)).map((e) => e.seq);
+  if (seqs.length) await db.outbox.bulkDelete(seqs);
+  await setMeta("lastRejected", rejected.length ? { at: new Date().toISOString(), count: rejected.length, items: rejected.slice(0, 5) } : null);
+
+  // Adopt the server's winning version unless a NEWER local edit is still queued.
+  for (const { table, row } of winningRows) {
+    const stillPending = await db.outbox.where("rowId").equals(row.id).count();
+    if (stillPending === 0) await db[table].put(row);
+  }
 }
 
 async function pull() {
   const cursor = await getMeta("cursor");
   const res = await apiFetch(`/sync/pull${cursor ? `?since=${encodeURIComponent(cursor)}` : ""}`);
   for (const ch of res.changes) {
-    const local = await db[ch.table].get(ch.row.id);
-    if (!local || new Date(ch.row.updatedAt) > new Date(local.updatedAt)) {
-      await db[ch.table].put(ch.row);
-    }
+    // Provenance-based apply: every delivered change is new information (the
+    // cursor guarantees it). Only skip rows that still have unpushed local
+    // edits — the next push reconciles those. No client-clock comparisons.
+    const stillPending = await db.outbox.where("rowId").equals(ch.row.id).count();
+    if (stillPending > 0) continue;
+    await db[ch.table].put(ch.row);
   }
   await setMeta("cursor", res.cursor);
+}
+
+/**
+ * Full resync — repair for devices whose local copy diverged (e.g. legacy
+ * clock-skew conflicts). Pushes pending changes first, then rebuilds every
+ * synced table from the server. Refuses if anything is still unsynced.
+ */
+export async function resyncAll() {
+  if (syncing || !navigator.onLine || !getAuth()) throw new Error("Butuh koneksi internet");
+  syncing = true;
+  notify();
+  try {
+    await push();
+    if ((await db.outbox.count()) > 0) {
+      throw new Error("Masih ada perubahan belum tersinkron — periksa dulu sebelum sinkron ulang");
+    }
+    await db.transaction("rw", db.caang, db.weekly_evals, db.stage_evals, db.meta, async () => {
+      await db.caang.clear();
+      await db.weekly_evals.clear();
+      await db.stage_evals.clear();
+      await db.meta.delete("cursor");
+    });
+    await pull();
+    await setMeta("lastSync", new Date().toISOString());
+  } finally {
+    syncing = false;
+    notify();
+  }
 }
 
 /** Pending count + last sync time for the badge; re-runs whenever they change. */

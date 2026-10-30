@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { clearAuth, getAuth } from "../lib/api.js";
-import { useSyncStatus, sync } from "../lib/sync.js";
+import { useSyncStatus, sync, resyncAll } from "../lib/sync.js";
 import { showToast, ToastHost } from "./toast.jsx";
 import { CaangModal, WeeklyEvalModal, StageModal } from "./modals.jsx";
 import { RaporModal } from "./Ranking.jsx";
@@ -35,6 +35,35 @@ function SyncBadge({ compact = false }) {
     >
       <span className={`h-1.5 w-1.5 rounded-full ${!online ? "bg-white/40" : "bg-kuning animate-pulse"}`} />
       {compact ? (pending > 0 ? pending : "") : label}
+    </button>
+  );
+}
+
+
+function ResyncButton() {
+  const [armed, setArmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  async function fire() {
+    if (!armed) { setArmed(true); setTimeout(() => setArmed(false), 3000); return; }
+    setArmed(false);
+    setBusy(true);
+    try {
+      await resyncAll();
+      showToast('Sinkron ulang selesai');
+    } catch (e) {
+      showToast(e.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button
+      onClick={fire}
+      disabled={busy}
+      title='Sinkron ulang penuh: bangun ulang data lokal dari server (perbaiki jika jumlah data berbeda antar perangkat)'
+      className={`rounded-sm border px-2 py-1.5 label-mono print:hidden ${armed ? "border-red-400 bg-red-500/20 text-red-200" : "border-white/20 bg-white/5 text-white/70 hover:text-kuning hover:border-kuning/60"}`}
+    >
+      {busy ? '…' : '↻'}
     </button>
   );
 }
@@ -100,6 +129,7 @@ export default function Shell({ profile, onLogout }) {
         </div>
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           <InstallButton />
+          <ResyncButton />
           <span className="sm:hidden"><SyncBadge compact /></span>
           <span className="hidden sm:block"><SyncBadge /></span>
           <div className="hidden md:flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/5 px-3 py-1.5 label-mono text-white/90">

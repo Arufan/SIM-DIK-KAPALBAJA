@@ -111,9 +111,9 @@ async function applyChange(change, req) {
   const existing = await def.model.findUnique({ where: { id: row.id } });
 
   if (change.op === "delete") {
-    if (!isNewer(row.updatedAt, existing)) {
-      return { id: row.id, status: "conflict", serverRow: existing };
-    }
+    // Deletes win by arrival — a device clock that is behind must never be
+    // able to "hide" a row locally while the server keeps it alive elsewhere.
+    if (!existing) return { id: row.id, status: "accepted" };
     const serverRow = await def.model.update({
       where: { id: row.id },
       data: { deletedAt: new Date(), updatedAt: new Date(), syncedAt: new Date() },
