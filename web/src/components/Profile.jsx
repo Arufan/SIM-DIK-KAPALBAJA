@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { RadialLinearScale, CategoryScale, Chart as ChartJS, Filler, Tooltip, RadarController, PointElement, LineElement } from "chart.js";
 import { Radar } from "react-chartjs-2";
 import { db, live } from "../lib/db.js";
-import { overallStats, weeklyTotal, fisikScore, BIDANG, STATUS_STYLES } from "../lib/scoring.js";
+import { overallStats, weeklyTotal, fisikScore, fmtPair, BIDANG, STATUS_STYLES } from "../lib/scoring.js";
 import { deleteRecord } from "../lib/sync.js";
 import { showToast } from "./toast.jsx";
 
@@ -169,13 +169,13 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
                     <tr key={e.id} className="border-b border-slate-100">
                       <td className="py-2 pr-3 font-semibold">Mgg {e.weekNo}</td>
                       <td className="py-2 pr-3 text-slate-500">{e.tanggal}</td>
-                      <td className="py-2 pr-3">{e.navdarT}/{e.navdarP}</td>
-                      <td className="py-2 pr-3">{e.taliT}/{e.taliP}</td>
-                      <td className="py-2 pr-3">{e.ppgdT}/{e.ppgdP}</td>
-                      <td className="py-2 pr-3">{e.survivalT}/{e.survivalP}</td>
-                      <td className="py-2 pr-3">{e.buddy}/{e.team}</td>
-                      <td className="py-2 pr-3">{e.fisikScore ?? fisikScore(e.runMin, e.pushUp, e.pullUp)}</td>
-                      <td className="py-2 pr-3 font-bold text-forest-700">{e.avg ?? weeklyTotal(e)}</td>
+                      <td className="py-2 pr-3">{fmtPair(e.navdarT, e.navdarP)}</td>
+                      <td className="py-2 pr-3">{fmtPair(e.taliT, e.taliP)}</td>
+                      <td className="py-2 pr-3">{fmtPair(e.ppgdT, e.ppgdP)}</td>
+                      <td className="py-2 pr-3">{fmtPair(e.survivalT, e.survivalP)}</td>
+                      <td className="py-2 pr-3">{fmtPair(e.buddy, e.team)}</td>
+                      <td className="py-2 pr-3">{e.fisikScore ?? fisikScore(e.runMin, e.pushUp, e.pullUp) ?? "–"}</td>
+                      <td className="py-2 pr-3 font-bold text-forest-700">{e.avg ?? weeklyTotal(e) ?? "–"}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">
                         <button onClick={() => openModal({ type: "eval", edit: e })} className="mr-1" title="Edit">✏️</button>
                         <button

@@ -2,7 +2,7 @@
 // The offline-first client itself reads its local DB and talks to /sync only.
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
-import { pembinaanStatus, weeklyTotal } from "../lib/scoring.js";
+import { caangStats } from "../lib/scoring.js";
 
 const prisma = new PrismaClient();
 export const browseRouter = Router();
@@ -18,11 +18,8 @@ browseRouter.get("/caang", async (req, res) => {
     include: { weeklyEvals: { where: { deletedAt: null } } },
   });
   res.json(rows.map(({ weeklyEvals, ...c }) => {
-    let totalAvg = 0;
-    if (weeklyEvals.length > 0) {
-      totalAvg = Math.round((weeklyEvals.reduce((a, e) => a + weeklyTotal(e), 0) / weeklyEvals.length) * 10) / 10;
-    }
-    return { ...c, totalAvg, status: pembinaanStatus(totalAvg, weeklyEvals.length), evalCount: weeklyEvals.length };
+    const stats = caangStats(weeklyEvals);
+    return { ...c, totalAvg: stats.totalAvg, status: stats.status, evalCount: stats.count };
   }));
 });
 

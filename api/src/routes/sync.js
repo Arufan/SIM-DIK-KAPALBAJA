@@ -42,12 +42,12 @@ const weeklyRow = z.object({
   caangId: z.string().min(1),
   weekNo: z.number().int().min(1).max(14),
   tanggal: isoDate,
-  navdarT: z.number(), navdarP: z.number(),
-  taliT: z.number(), taliP: z.number(),
-  ppgdT: z.number(), ppgdP: z.number(),
-  survivalT: z.number(), survivalP: z.number(),
-  buddy: z.number(), team: z.number(),
-  runMin: z.number(), pushUp: z.number().int().min(0), pullUp: z.number().int().min(0),
+  navdarT: z.number().nullish(), navdarP: z.number().nullish(),
+  taliT: z.number().nullish(), taliP: z.number().nullish(),
+  ppgdT: z.number().nullish(), ppgdP: z.number().nullish(),
+  survivalT: z.number().nullish(), survivalP: z.number().nullish(),
+  buddy: z.number().nullish(), team: z.number().nullish(),
+  runMin: z.number().nullish(), pushUp: z.number().int().min(0).nullish(), pullUp: z.number().int().min(0).nullish(),
   catatan: z.string().nullish(),
   updatedAt: isoDate,
 });
@@ -91,7 +91,7 @@ function toColumns(table, row) {
   }
   if (table === "weekly_evals") {
     const fisik = fisikScore(row.runMin, row.pushUp, row.pullUp);
-    return { ...base, id: row.id, caangId: row.caangId, weekNo: row.weekNo, tanggal: row.tanggal, navdarT: row.navdarT, navdarP: row.navdarP, taliT: row.taliT, taliP: row.taliP, ppgdT: row.ppgdT, ppgdP: row.ppgdP, survivalT: row.survivalT, survivalP: row.survivalP, buddy: row.buddy, team: row.team, runMin: row.runMin, pushUp: row.pushUp, pullUp: row.pullUp, fisikScore: fisik, avg: weeklyTotal({ ...row, fisikScore: fisik }), catatan: row.catatan ?? null };
+    return { ...base, id: row.id, caangId: row.caangId, weekNo: row.weekNo, tanggal: row.tanggal, navdarT: row.navdarT ?? null, navdarP: row.navdarP ?? null, taliT: row.taliT ?? null, taliP: row.taliP ?? null, ppgdT: row.ppgdT ?? null, ppgdP: row.ppgdP ?? null, survivalT: row.survivalT ?? null, survivalP: row.survivalP ?? null, buddy: row.buddy ?? null, team: row.team ?? null, runMin: row.runMin ?? null, pushUp: row.pushUp ?? null, pullUp: row.pullUp ?? null, fisikScore: fisik, avg: weeklyTotal({ ...row, fisikScore: fisik }), catatan: row.catatan ?? null };
   }
   return { ...base, id: row.id, caangId: row.caangId, stage: row.stage, penguji: row.penguji, tanggal: row.tanggal, navdarT: row.navdarT, navdarP: row.navdarP, taliT: row.taliT, taliP: row.taliP, ppgdT: row.ppgdT, ppgdP: row.ppgdP, survivalT: row.survivalT, survivalP: row.survivalP, mppT: row.mppT, mppP: row.mppP, rata: stageTotal(row), keterangan: row.keterangan ?? null };
 }

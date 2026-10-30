@@ -26,7 +26,7 @@ const api = async (path, { method = "GET", token, body } = {}) => {
 };
 
 // --- scoring parity with the original site (sample rows from the live app) ---
-const { fisikScore, weeklyTotal, stageTotal, pembinaanStatus } = await import("../src/lib/scoring.js");
+const { fisikScore, weeklyTotal, stageTotal, caangStats } = await import("../src/lib/scoring.js");
 console.log("[scoring]");
 check("fisik 14.5m/35p/12p = 85", fisikScore(14.5, 35, 12) === 85);
 check("fisik 15m/30p/10p  = 73", fisikScore(15, 30, 10) === 73);
@@ -39,8 +39,9 @@ check(
   }) === 84.8,
 );
 check("stage rata = 87.2", stageTotal({ navdarT: 88, navdarP: 85, taliT: 90, taliP: 92, ppgdT: 85, ppgdP: 88, survivalT: 82, survivalP: 85, mppT: 85, mppP: 88 }) === 87.2);
-check("status >=80 Lulus Standar", pembinaanStatus(84.8, 3) === "Lulus Standar");
-check("status <70 Perlu Evaluasi", pembinaanStatus(68.3, 3) === "Perlu Evaluasi");
+const mk = (v) => ({ navdarT: v, navdarP: v, taliT: v, taliP: v, ppgdT: v, ppgdP: v, survivalT: v, survivalP: v, buddy: v, team: v, runMin: v === 85 ? 13.5 : 14, pushUp: v === 85 ? 30 : 23, pullUp: v === 85 ? 10 : 8 });
+check("status >=80 Lulus Standar", caangStats([mk(85)]).status === "Lulus Standar");
+check("status <70 Perlu Evaluasi", caangStats([mk(65)]).status === "Perlu Evaluasi");
 
 // --- login ---
 console.log("[auth]");
@@ -112,6 +113,18 @@ const dupEval = await api("/sync/push", {
 });
 check("older duplicate week -> conflict (original kept)", dupEval.json.results[0].status === "conflict" && dupEval.json.results[0].serverRow.id === evalId);
 
+// --- partial week: only 2 materi assessed (Teori+Praktik), extras optional ---
+console.log("[partial week]");
+const partialId = uuid();
+const partialPush = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "partial-week-device", changes: [{ table: "weekly_evals", op: "create", row: { id: partialId, caangId, weekNo: 2, tanggal: "2026-10-31", navdarT: 80, navdarP: 90, taliT: 70, taliP: 80, ppgdT: null, ppgdP: null, survivalT: null, survivalP: null, buddy: null, team: null, runMin: null, pushUp: null, pullUp: null, updatedAt: nowIso() } }] },
+});
+check("partial week accepted", partialPush.json.results[0].status === "accepted");
+const partialRow = partialPush.json.results[0].serverRow;
+check("partial avg = mean of assessed fields (nav 85 + tali 75 -> 80)", partialRow?.avg === 80);
+check("partial fisikScore null without physical test", partialRow?.fisikScore === null);
+
 // --- pull: cursor increments, rows come back, delete becomes tombstone ---
 console.log("[pull]");
 const pull1 = await api("/sync/pull?since=1970-01-01T00:00:00.000Z", { token });
@@ -131,7 +144,7 @@ check("tombstone arrives as op=delete", pull3.json.changes.some((c) => c.table =
 // --- browse endpoints ---
 console.log("[browse]");
 const list = await api(`/caang?q=Smoke`, { token });
-check("caang list + computed status", list.status === 200 && list.json.some((c) => c.id === caangId && c.evalCount === 0));
+check("caang list + partial-week stats (1 eval, avg 80, Lulus)", list.status === 200 && list.json.some((c) => c.id === caangId && c.evalCount === 1 && c.totalAvg === 80 && c.status === "Lulus Standar"));
 
 
 // --- clock skew: a device with a slow clock must still reach other devices ---

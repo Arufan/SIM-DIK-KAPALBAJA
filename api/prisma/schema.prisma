@@ -53,21 +53,21 @@ model WeeklyEval {
   caang      Caang     @relation(fields: [caangId], references: [id])
   weekNo     Int // 1..14
   tanggal    String // ISO date
-  navdarT    Float
-  navdarP    Float
-  taliT      Float
-  taliP      Float
-  ppgdT      Float
-  ppgdP      Float
-  survivalT  Float
-  survivalP  Float
-  buddy      Float
-  team       Float
-  runMin     Float // lari 3km, menit
-  pushUp     Int
-  pullUp     Int
-  fisikScore Float // derived, computed on write (shared scoring module)
-  avg        Float // derived weekly average
+  navdarT    Float? // mingguan: hanya materi yang diajarkan (min 2 materi per minggu)
+  navdarP    Float?
+  taliT    Float?
+  taliP    Float?
+  ppgdT    Float?
+  ppgdP    Float?
+  survivalT    Float?
+  survivalP    Float?
+  buddy    Float?
+  team    Float?
+runMin     Float? // lari 3km, menit (opsional)
+  pushUp     Int?
+  pullUp     Int?
+  fisikScore Float? // derived, computed on write (shared scoring module)
+  avg        Float? // derived weekly average
   catatan    String?
   mentorId   String?
   createdAt  DateTime  @default(now())

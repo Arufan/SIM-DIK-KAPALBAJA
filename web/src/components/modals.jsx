@@ -32,6 +32,7 @@ export function Modal({ title, children, onClose, wide }) {
 const inputCls =
   "w-full rounded-sm border border-forest-950/25 bg-white px-3.5 py-2.5 text-base text-ink focus:outline-none focus:ring-2 focus:ring-forest-700";
 const num = (v) => (v === "" ? null : Number(v));
+const numOrNull = (v) => (v === "" || v == null ? null : Number(v));
 
 function Field({ label, children }) {
   return (
@@ -117,20 +118,36 @@ export function WeeklyEvalModal({ edit, caangId, onClose }) {
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
 
   const fisik = useMemo(() => {
-    if (f.runMin === "" || f.pushUp === "" || f.pullUp === "") return null;
-    return fisikScore(num(f.runMin), num(f.pushUp), num(f.pullUp));
+    if (f.runMin === "" && f.pushUp === "" && f.pullUp === "") return null;
+    return fisikScore(numOrNull(f.runMin), numOrNull(f.pushUp), numOrNull(f.pullUp));
   }, [f.runMin, f.pushUp, f.pullUp]);
 
   const preview = useMemo(() => {
-    if (fisik == null || Object.values(f).some((v) => v === "")) return null;
-    return weeklyTotal({ ...f, weekNo: num(f.weekNo), runMin: num(f.runMin), pushUp: num(f.pushUp), pullUp: num(f.pullUp), fisikScore: fisik, catatan: undefined });
+    const val = (v) => (v === "" ? null : Number(v));
+    const hasAny = ["navdarT","navdarP","taliT","taliP","ppgdT","ppgdP","survivalT","survivalP","buddy","team"].some((k) => val(f[k]) != null) || fisik != null;
+    if (!hasAny) return null;
+    return weeklyTotal({
+      navdarT: val(f.navdarT), navdarP: val(f.navdarP), taliT: val(f.taliT), taliP: val(f.taliP),
+      ppgdT: val(f.ppgdT), ppgdP: val(f.ppgdP), survivalT: val(f.survivalT), survivalP: val(f.survivalP),
+      buddy: val(f.buddy), team: val(f.team), runMin: val(f.runMin), pushUp: val(f.pushUp), pullUp: val(f.pullUp),
+      fisikScore: fisik,
+    });
   }, [f, fisik]);
 
   async function save(e) {
     e.preventDefault();
     if (!f.caangId) return showToast("Pilih calon anggota", "error");
-    const required = ["navdarT", "navdarP", "taliT", "taliP", "ppgdT", "ppgdP", "survivalT", "survivalP", "buddy", "team", "runMin", "pushUp", "pullUp"];
-    if (required.some((k) => f[k] === "")) return showToast("Lengkapi semua nilai", "error");
+    // Mingguan menilai hanya materi yang diajarkan: minimal 2 materi, tiap
+    // materi wajib Teori + Praktik. Tes fisik & buddy/team opsional.
+    const materi = [["navdarT", "navdarP", "Navdar"], ["taliT", "taliP", "Tali"], ["ppgdT", "ppgdP", "PPGD"], ["survivalT", "survivalP", "Survival"]];
+    let filled = 0;
+    for (const [tKey, pKey, label] of materi) {
+      const t = f[tKey] === "" ? null : Number(f[tKey]);
+      const p = f[pKey] === "" ? null : Number(f[pKey]);
+      if ((t == null) !== (p == null)) return showToast(`${label}: isi Teori dan Praktik sekaligus`, "error");
+      if (t != null) filled++;
+    }
+    if (filled < 2) return showToast("Isi minimal 2 materi (Teori & Praktik)", "error");
 
     const weekTaken = await db.weekly_evals
       .where("[caangId+weekNo]")
@@ -144,12 +161,12 @@ export function WeeklyEvalModal({ edit, caangId, onClose }) {
       caangId: f.caangId,
       weekNo: Number(f.weekNo),
       tanggal: f.tanggal,
-      navdarT: num(f.navdarT), navdarP: num(f.navdarP),
-      taliT: num(f.taliT), taliP: num(f.taliP),
-      ppgdT: num(f.ppgdT), ppgdP: num(f.ppgdP),
-      survivalT: num(f.survivalT), survivalP: num(f.survivalP),
-      buddy: num(f.buddy), team: num(f.team),
-      runMin: num(f.runMin), pushUp: num(f.pushUp), pullUp: num(f.pullUp),
+      navdarT: numOrNull(f.navdarT), navdarP: numOrNull(f.navdarP),
+      taliT: numOrNull(f.taliT), taliP: numOrNull(f.taliP),
+      ppgdT: numOrNull(f.ppgdT), ppgdP: numOrNull(f.ppgdP),
+      survivalT: numOrNull(f.survivalT), survivalP: numOrNull(f.survivalP),
+      buddy: numOrNull(f.buddy), team: numOrNull(f.team),
+      runMin: numOrNull(f.runMin), pushUp: numOrNull(f.pushUp), pullUp: numOrNull(f.pullUp),
       fisikScore: fisik,
       catatan: f.catatan,
     };
@@ -178,6 +195,11 @@ export function WeeklyEvalModal({ edit, caangId, onClose }) {
             <input type="date" className={inputCls} value={f.tanggal} onChange={set("tanggal")} />
           </Field>
         </div>
+
+        <p className="rounded-sm border border-kuning/50 bg-kuning/10 px-3 py-2 text-xs text-forest-900">
+          Mingguan hanya menilai materi yang diajarkan: isi <b>minimal 2 materi</b> (Teori &amp; Praktik).
+          Materi lain, tes fisik, dan buddy/team <b>opsional</b>.
+        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ScorePair label="🧭 Navigasi Darat" color="text-forest-700" t={f.navdarT} p={f.navdarP} setT={set("navdarT")} setP={set("navdarP")} />

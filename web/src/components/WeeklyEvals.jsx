@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, live } from "../lib/db.js";
-import { weeklyTotal, fisikScore } from "../lib/scoring.js";
+import { weeklyTotal, fisikScore, fmtPair } from "../lib/scoring.js";
 import { deleteRecord } from "../lib/sync.js";
 import { exportHtmlToPdf, escapeHtml } from "../lib/exportPdf.js";
 import { showToast } from "./toast.jsx";
@@ -36,8 +36,8 @@ export default function WeeklyEvals({ openModal }) {
     HEAD,
     ...rows.map(({ e, c }, i) => [
       i + 1, c.nama, `Minggu ${e.weekNo}`, e.tanggal,
-      `${e.navdarT}/${e.navdarP}`, `${e.taliT}/${e.taliP}`, `${e.ppgdT}/${e.ppgdP}`, `${e.survivalT}/${e.survivalP}`,
-      e.buddy, `${e.runMin}m/${e.pushUp}p/${e.pullUp}p`, e.avg ?? weeklyTotal(e), e.catatan ?? "",
+      fmtPair(e.navdarT, e.navdarP), fmtPair(e.taliT, e.taliP), fmtPair(e.ppgdT, e.ppgdP), fmtPair(e.survivalT, e.survivalP),
+      fmtPair(e.buddy, e.team), e.runMin == null && e.pushUp == null && e.pullUp == null ? "-" : `${e.runMin ?? "-"}m/${e.pushUp ?? "-"}p/${e.pullUp ?? "-"}p`, e.avg ?? weeklyTotal(e) ?? "-", e.catatan ?? "",
     ]),
   ];
 
@@ -53,13 +53,13 @@ export default function WeeklyEvals({ openModal }) {
           <td style="border:1px solid #cbd5e1;padding:5px 7px;font-weight:700">${escapeHtml(c.nama)}</td>
           <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.weekNo}</td>
           <td style="border:1px solid #cbd5e1;padding:5px 7px">${escapeHtml(e.tanggal)}</td>
-          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.navdarT}/${e.navdarP}</td>
-          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.taliT}/${e.taliP}</td>
-          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.ppgdT}/${e.ppgdP}</td>
-          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.survivalT}/${e.survivalP}</td>
-          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.buddy}/${e.team}</td>
-          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.runMin}m/${e.pushUp}p/${e.pullUp}p</td>
-          <td style="border:1px solid #cbd5e1;padding:5px 7px;font-weight:700">${avg}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${fmtPair(e.navdarT, e.navdarP)}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${fmtPair(e.taliT, e.taliP)}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${fmtPair(e.ppgdT, e.ppgdP)}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${fmtPair(e.survivalT, e.survivalP)}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${fmtPair(e.buddy, e.team)}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px">${e.runMin == null && e.pushUp == null && e.pullUp == null ? "–" : `${e.runMin ?? "–"}m/${e.pushUp ?? "–"}p/${e.pullUp ?? "–"}p`}</td>
+          <td style="border:1px solid #cbd5e1;padding:5px 7px;font-weight:700">${avg ?? "–"}</td>
         </tr>`;
       })
       .join("");
@@ -130,15 +130,15 @@ export default function WeeklyEvals({ openModal }) {
                 <p className="label-mono text-forest-700 mt-0.5">Minggu {e.weekNo} · {e.tanggal}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="font-display font-bold text-2xl text-forest-700 leading-none">{e.avg ?? weeklyTotal(e)}</p>
+                <p className="font-display font-bold text-2xl text-forest-700 leading-none">{e.avg ?? weeklyTotal(e) ?? "–"}</p>
                 <p className="label-mono text-sage mt-1">Total</p>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              {[["Navdar", e.navdarT, e.navdarP], ["Tali", e.taliT, e.taliP], ["PPGD", e.ppgdT, e.ppgdP], ["Survival", e.survivalT, e.survivalP], ["Buddy", e.buddy, e.team], ["Fisik", `${e.runMin}m`, `${e.pushUp}/${e.pullUp}`]].map(([label, a, b]) => (
+              {[["Navdar", fmtPair(e.navdarT, e.navdarP)], ["Tali", fmtPair(e.taliT, e.taliP)], ["PPGD", fmtPair(e.ppgdT, e.ppgdP)], ["Survival", fmtPair(e.survivalT, e.survivalP)], ["Buddy", fmtPair(e.buddy, e.team)], ["Fisik", e.runMin == null && e.pushUp == null && e.pullUp == null ? "–" : `${e.runMin ?? "–"}m · ${e.pushUp ?? "–"}/${e.pullUp ?? "–"}`]].map(([label, text]) => (
                 <div key={label} className="rounded-sm bg-paper-2 py-1.5">
                   <p className="text-[10px] font-semibold text-sage uppercase">{label}</p>
-                  <p className="text-xs font-bold text-ink">{a}/{b}</p>
+                  <p className="text-xs font-bold text-ink">{text}</p>
                 </div>
               ))}
             </div>
@@ -183,13 +183,13 @@ export default function WeeklyEvals({ openModal }) {
                 <td className="py-2.5 px-3 font-semibold text-slate-800">{c.nama}</td>
                 <td className="py-2.5 px-3 font-semibold text-forest-700">Minggu {e.weekNo}</td>
                 <td className="py-2.5 px-3 text-slate-500">{e.tanggal}</td>
-                <td className="py-2.5 px-3">{e.navdarT}/{e.navdarP}</td>
-                <td className="py-2.5 px-3">{e.taliT}/{e.taliP}</td>
-                <td className="py-2.5 px-3">{e.ppgdT}/{e.ppgdP}</td>
-                <td className="py-2.5 px-3">{e.survivalT}/{e.survivalP}</td>
-                <td className="py-2.5 px-3">{e.buddy}/{e.team}</td>
-                <td className="py-2.5 px-3">{e.runMin}m/{e.pushUp}p/{e.pullUp}p</td>
-                <td className="py-2.5 px-3 font-bold text-forest-700">{e.avg ?? weeklyTotal(e)}</td>
+                <td className="py-2.5 px-3">{fmtPair(e.navdarT, e.navdarP)}</td>
+                <td className="py-2.5 px-3">{fmtPair(e.taliT, e.taliP)}</td>
+                <td className="py-2.5 px-3">{fmtPair(e.ppgdT, e.ppgdP)}</td>
+                <td className="py-2.5 px-3">{fmtPair(e.survivalT, e.survivalP)}</td>
+                <td className="py-2.5 px-3">{fmtPair(e.buddy, e.team)}</td>
+                <td className="py-2.5 px-3">{e.runMin == null && e.pushUp == null && e.pullUp == null ? "–" : `${e.runMin ?? "–"}m/${e.pushUp ?? "–"}p/${e.pullUp ?? "–"}p`}</td>
+                <td className="py-2.5 px-3 font-bold text-forest-700">{e.avg ?? weeklyTotal(e) ?? "–"}</td>
                 <td className="py-2.5 px-3 text-slate-500 max-w-[180px] truncate" title={e.catatan}>{e.catatan}</td>
                 <td className="py-2.5 px-3 whitespace-nowrap">
                   <button onClick={() => openModal({ type: "eval", edit: e })} className="mr-1" title="Edit">✏️</button>
