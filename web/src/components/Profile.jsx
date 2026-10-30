@@ -42,7 +42,12 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
       <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-4 h-fit">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold tracking-wide text-slate-500 uppercase">👥 Pilih Calon Anggota</h2>
-          <button onClick={() => openModal({ type: "caang" })} className="text-xs font-semibold text-forest-700 hover:underline">+ Baru</button>
+          <button
+            onClick={() => openModal({ type: "caang" })}
+            className="shrink-0 rounded-sm bg-kuning px-3.5 py-2.5 text-xs font-bold text-forest-950 shadow-sm hover:brightness-95 active:scale-95 transition-transform"
+          >
+            + Baru
+          </button>
         </div>
         <input
           value={q}
