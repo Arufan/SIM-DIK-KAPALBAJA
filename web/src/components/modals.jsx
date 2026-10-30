@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, live } from "../lib/db.js";
 import { fisikScore, weeklyTotal, stageTotal } from "../lib/scoring.js";
 import { saveRecord } from "../lib/sync.js";
+import { getAuth } from "../lib/api.js";
 import { showToast } from "./toast.jsx";
 
 // Bottom sheet on phones (thumb-reachable, native app feel), centered card on
@@ -61,7 +62,7 @@ function ScorePair({ label, color, t, p, setT, setP }) {
 
 /* ---------------- Pendaftaran / Edit Calon Anggota ---------------- */
 export function CaangModal({ edit, onClose }) {
-  const [f, setF] = useState(() => edit ?? { npm: "", nama: "", fakultas: "", prodi: "", angkatan: "", mentorNama: "" });
+  const [f, setF] = useState(() => edit ?? { npm: "", nama: "", fakultas: "", prodi: "", angkatan: "", mentorNama: getAuth()?.profile?.displayName ?? "" });
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
 
   async function save(e) {
@@ -86,7 +87,7 @@ export function CaangModal({ edit, onClose }) {
           <Field label="Fakultas *"><input className={inputCls} placeholder="Fakultas Teknik" value={f.fakultas} onChange={set("fakultas")} /></Field>
           <Field label="Program Studi *"><input className={inputCls} placeholder="Informatika" value={f.prodi} onChange={set("prodi")} /></Field>
           <Field label="Angkatan Diklat *"><input className={inputCls} placeholder="34" value={f.angkatan} onChange={set("angkatan")} /></Field>
-          <Field label="Nama Mentor *"><input className={inputCls} placeholder="Mentor" value={f.mentorNama} onChange={set("mentorNama")} /></Field>
+          <Field label="Nama Mentor * (otomatis dari akun)"><input className={inputCls} placeholder="Mentor" value={f.mentorNama} onChange={set("mentorNama")} /></Field>
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-3 label-mono text-forest-900 hover:bg-paper-2">Batal</button>

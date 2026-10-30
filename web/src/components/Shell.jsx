@@ -141,14 +141,14 @@ export default function Shell({ profile, onLogout }) {
         </div>
       </header>
 
-      {/* action bar — desktop only; mobile uses the FAB */}
-      <div className="hidden sm:flex bg-forest-950 px-6 py-2.5 items-center justify-end gap-2 border-b border-white/10 print:hidden">
-        {!online && <span className="label-mono text-kuning/80 mr-auto">Mode offline — input tetap jalan</span>}
-        <button onClick={() => setModal({ type: "caang" })} className="rounded-sm bg-kuning px-4 py-2 label-mono text-forest-950 hover:brightness-95">
-          + Tambah Caang →
+      {/* action bar — always visible (field users on portrait phones need it) */}
+      <div className="flex flex-wrap bg-forest-950 px-3 sm:px-6 py-2 items-center justify-end gap-2 border-b border-white/10 print:hidden">
+        <span className="label-mono text-kuning/80 mr-auto hidden sm:inline">{!online ? "Mode offline — input tetap jalan" : ""}</span>
+        <button onClick={() => setModal({ type: "caang" })} className="rounded-sm bg-kuning px-3 sm:px-4 py-2 label-mono text-forest-950 hover:brightness-95">
+          + Tambah Caang <span className="hidden sm:inline">→</span>
         </button>
-        <button onClick={() => setModal({ type: "eval" })} className="rounded-sm border border-white/25 bg-white/5 px-4 py-2 label-mono text-white hover:border-kuning/60 hover:text-kuning">
-          + Input Evaluasi →
+        <button onClick={() => setModal({ type: "eval" })} className="rounded-sm border border-white/25 bg-white/5 px-3 sm:px-4 py-2 label-mono text-white hover:border-kuning/60 hover:text-kuning">
+          + Input Evaluasi <span className="hidden sm:inline">→</span>
         </button>
       </div>
 

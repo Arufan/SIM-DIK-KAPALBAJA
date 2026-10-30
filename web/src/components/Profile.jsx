@@ -5,6 +5,7 @@ import { Radar } from "react-chartjs-2";
 import { db, live } from "../lib/db.js";
 import { overallStats, weeklyTotal, fisikScore, fmtPair, BIDANG, STATUS_STYLES } from "../lib/scoring.js";
 import { deleteRecord } from "../lib/sync.js";
+import { getAuth } from "../lib/api.js";
 import { showToast } from "./toast.jsx";
 
 ChartJS.register(RadialLinearScale, CategoryScale, Tooltip, Filler, RadarController, PointElement, LineElement);
@@ -12,6 +13,8 @@ ChartJS.register(RadialLinearScale, CategoryScale, Tooltip, Filler, RadarControl
 const BAR_COLORS = ["bg-[#1E6943]", "bg-[#0B2B1E]", "bg-[#4E9463]", "bg-[#F4D52F]", "bg-[#657168]", "bg-[#B8912B]"];
 
 export default function Profile({ selectedCaangId, setSelectedCaangId, openModal }) {
+  const isAdmin = getAuth()?.profile?.role === "admin";
+  const [armDelete, setArmDelete] = useState(false);
   const [q, setQ] = useState("");
   const caang = useLiveQuery(() => live("caang"), [], []);
   const evals = useLiveQuery(() => live("weekly_evals"), [], []);
@@ -102,6 +105,30 @@ export default function Profile({ selectedCaangId, setSelectedCaangId, openModal
                 <p className="text-3xl font-bold text-forest-700">{stats.count > 0 ? stats.totalAvg : "-"}</p>
               </div>
             </div>
+
+            {isAdmin && (
+              <div className="mt-4 flex flex-wrap gap-2 print:hidden">
+                <button
+                  onClick={() => openModal({ type: "caang", edit: selected })}
+                  className="rounded-sm border border-forest-950/20 px-3.5 py-2.5 label-mono text-forest-900 hover:bg-paper-2"
+                >
+                  ✏️ Edit Caang
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!armDelete) { setArmDelete(true); setTimeout(() => setArmDelete(false), 3000); return; }
+                    setArmDelete(false);
+                    await deleteRecord("caang", selected.id);
+                    setSelectedCaangId(null);
+                    showToast("Calon anggota dihapus");
+                  }}
+                  className={`rounded-sm border px-3.5 py-2.5 label-mono ${armDelete ? "border-red-400 bg-red-100 text-red-800" : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"}`}
+                >
+                  {armDelete ? "⚠️ Yakin? Tap lagi" : "🗑️ Hapus Caang"}
+                </button>
+                <span className="label-mono text-sage self-center">khusus admin</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div className="h-56 sm:h-64">

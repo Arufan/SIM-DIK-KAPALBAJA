@@ -34,6 +34,7 @@ model Caang {
   mentorId  String?
   mentor    User?     @relation(fields: [mentorId], references: [id])
   status    String    @default("aktif") // aktif | lulus_standar | perlu_evaluasi | anggota_muda
+  mentorNama String?  // denormalized mentor display name (survives offline display)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   syncedAt  DateTime  @default(now()) // server-stamped: pull cursor basis (clock-skew-proof)

@@ -32,6 +32,7 @@ const caangRow = z.object({
   prodi: z.string().min(1),
   angkatan: z.string().min(1),
   mentorId: z.string().nullish(),
+  mentorNama: z.string().nullish(),
   status: z.enum(["aktif", "lulus_standar", "perlu_evaluasi", "anggota_muda"]).default("aktif"),
   createdAt: isoDate.optional(),
   updatedAt: isoDate,
@@ -87,7 +88,7 @@ function toColumns(table, row) {
   const base = { updatedAt: new Date(row.updatedAt), syncedAt: new Date() };
   if (row.createdAt) base.createdAt = new Date(row.createdAt);
   if (table === "caang") {
-    return { ...base, id: row.id, npm: row.npm, nama: row.nama, fakultas: row.fakultas, prodi: row.prodi, angkatan: row.angkatan, mentorId: row.mentorId ?? null, status: row.status };
+    return { ...base, id: row.id, npm: row.npm, nama: row.nama, fakultas: row.fakultas, prodi: row.prodi, angkatan: row.angkatan, mentorId: row.mentorId ?? null, mentorNama: row.mentorNama ?? null, status: row.status };
   }
   if (table === "weekly_evals") {
     const fisik = fisikScore(row.runMin, row.pushUp, row.pullUp);
@@ -110,6 +111,11 @@ async function applyChange(change, req) {
   const row = parsed.data;
   const existing = await def.model.findUnique({ where: { id: row.id } });
 
+  // Caang edit/delete is admin-only (mentors may create, auto-assigned to them).
+  if (change.table === "caang" && change.op !== "create" && req.user.role !== "admin") {
+    return { id: row.id, status: "rejected", errors: [{ message: "edit/hapus calon anggota khusus admin" }] };
+  }
+
   if (change.op === "delete") {
     // Deletes win by arrival — a device clock that is behind must never be
     // able to "hide" a row locally while the server keeps it alive elsewhere.
@@ -118,6 +124,12 @@ async function applyChange(change, req) {
       where: { id: row.id },
       data: { deletedAt: new Date(), updatedAt: new Date(), syncedAt: new Date() },
     });
+    // Cascade: a deleted caang takes their evaluation history with them.
+    if (change.table === "caang") {
+      const stamp = { deletedAt: new Date(), updatedAt: new Date(), syncedAt: new Date() };
+      await prisma.weeklyEval.updateMany({ where: { caangId: row.id, deletedAt: null }, data: stamp });
+      await prisma.stageEval.updateMany({ where: { caangId: row.id, deletedAt: null }, data: stamp });
+    }
     return { id: row.id, status: "accepted", serverRow };
   }
 
@@ -127,8 +139,15 @@ async function applyChange(change, req) {
 
   // Mentors may only own/create caang assigned to themselves; admin sets freely.
   const columns = toColumns(change.table, row);
-  if (change.table === "caang" && req.user.role !== "admin") {
-    columns.mentorId = req.user.sub;
+  if (change.table === "caang") {
+    const me = await prisma.user.findUnique({ where: { id: req.user.sub }, select: { displayName: true } });
+    if (req.user.role !== "admin") {
+      columns.mentorId = req.user.sub;
+      columns.mentorNama = me?.displayName ?? null;
+    } else if (!columns.mentorNama) {
+      columns.mentorNama = existing?.mentorNama ?? me?.displayName ?? null;
+      if (!columns.mentorId && !existing?.mentorId) columns.mentorId = req.user.sub;
+    }
   }
 
   try {

@@ -85,12 +85,51 @@ check("server recomputed fisik=85 & avg=84.8", pushedEval?.fisikScore === 85 && 
 check("server recomputed stage rata=87.2", push1.json.results[2].serverRow?.rata === 87.2);
 
 // caang created by non-admin gets auto-assigned to that mentor
+const mentorCaangId = uuid();
 const mentorLogin = await api("/auth/login", { method: "POST", body: { username: "mentor", password: process.env.SEED_ADMIN_PASSWORD || "changeme123" } });
 const pushMentor = await api("/sync/push", {
   method: "POST", token: mentorLogin.json.accessToken,
-  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "create", row: { id: uuid(), npm: "2099098", nama: "Mentor Caang", fakultas: "F", prodi: "P", angkatan: "99", updatedAt: nowIso() } }] },
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "create", row: { id: mentorCaangId, npm: "2099098", nama: "Mentor Caang", fakultas: "F", prodi: "P", angkatan: "99", updatedAt: nowIso() } }] },
 });
 check("mentor-owned caang auto-assigned", pushMentor.json.results[0].status === "accepted" && pushMentor.json.results[0].serverRow.mentorId === mentorLogin.json.profile.id);
+check("mentorNama from creator display name", pushMentor.json.results[0].serverRow.mentorNama === "Senior Mentor");
+
+// --- caang edit/delete is admin-only ---
+console.log("[caang permissions]");
+const mentorEdit = await api("/sync/push", {
+  method: "POST", token: mentorLogin.json.accessToken,
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "update", row: { id: mentorCaangId, npm: "2099098", nama: "HACKED", fakultas: "F", prodi: "P", angkatan: "99", updatedAt: nowIso() } }] },
+});
+check("mentor caang edit rejected", mentorEdit.json.results[0].status === "rejected");
+const mentorDel = await api("/sync/push", {
+  method: "POST", token: mentorLogin.json.accessToken,
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "delete", row: { id: mentorCaangId, updatedAt: nowIso() } }] },
+});
+check("mentor caang delete rejected", mentorDel.json.results[0].status === "rejected");
+const adminRename = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "update", row: { id: mentorCaangId, npm: "2099098", nama: "Mentor Caang", fakultas: "F", prodi: "P", angkatan: "99", mentorNama: "Senior Dewi", updatedAt: nowIso() } }] },
+});
+check("admin caang edit accepted", adminRename.json.results[0].status === "accepted");
+
+// --- admin caang delete cascades evaluation history ---
+console.log("[cascade delete]");
+const cascadeCaangId = uuid();
+const cascadeEvalId = uuid();
+await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "smoke-device", changes: [
+    { table: "caang", op: "create", row: { id: cascadeCaangId, npm: "2099097", nama: "Cascade Test", fakultas: "F", prodi: "P", angkatan: "99", updatedAt: nowIso() } },
+    { table: "weekly_evals", op: "create", row: { id: cascadeEvalId, caangId: cascadeCaangId, weekNo: 1, tanggal: "2026-10-30", navdarT: 80, navdarP: 80, taliT: 80, taliP: 80, ppgdT: 80, ppgdP: 80, survivalT: 80, survivalP: 80, buddy: 80, team: 80, runMin: 14, pushUp: 30, pullUp: 10, updatedAt: nowIso() } },
+  ] },
+});
+const cascadeDel = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "delete", row: { id: cascadeCaangId, updatedAt: nowIso() } }] },
+});
+check("admin caang delete accepted", cascadeDel.json.results[0].status === "accepted");
+const pullCascade = await api("/sync/pull?since=1970-01-01T00:00:00.000Z", { token });
+check("caang delete cascades to evals", pullCascade.json.changes.some((c) => c.table === "weekly_evals" && c.row.id === cascadeEvalId && c.op === "delete"));
 
 // --- LWW conflict: stale update must lose ---
 console.log("[conflict]");
