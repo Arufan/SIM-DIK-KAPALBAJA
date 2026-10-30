@@ -15,7 +15,7 @@ import { fisikScore, weeklyTotal, stageTotal } from "../lib/scoring.js";
 //
 // GET /sync/pull?since=<ISO>
 //   -> { changes: [{ table, op: "upsert" | "delete", row }], cursor, serverTime }
-//   Every row (including soft-delete tombstones) with updatedAt > since.
+//   Every row (including soft-delete tombstones) with server-stamped syncedAt > since.
 //   Clients apply a pulled row only when it is newer than their local copy,
 //   which makes echoing a device's own push back to it harmless.
 
@@ -84,7 +84,7 @@ const pushSchema = z.object({
 
 /** Map a validated client row to Prisma columns, recomputing derived scores. */
 function toColumns(table, row) {
-  const base = { updatedAt: new Date(row.updatedAt) };
+  const base = { updatedAt: new Date(row.updatedAt), syncedAt: new Date() };
   if (row.createdAt) base.createdAt = new Date(row.createdAt);
   if (table === "caang") {
     return { ...base, id: row.id, npm: row.npm, nama: row.nama, fakultas: row.fakultas, prodi: row.prodi, angkatan: row.angkatan, mentorId: row.mentorId ?? null, status: row.status };
@@ -116,7 +116,7 @@ async function applyChange(change, req) {
     }
     const serverRow = await def.model.update({
       where: { id: row.id },
-      data: { deletedAt: new Date(), updatedAt: new Date() },
+      data: { deletedAt: new Date(), updatedAt: new Date(), syncedAt: new Date() },
     });
     return { id: row.id, status: "accepted", serverRow };
   }
@@ -171,7 +171,7 @@ syncRouter.get("/pull", async (req, res) => {
   const now = new Date(); // cursor captured up-front: no row in (since, now] can be missed
   const changes = [];
   for (const [table, { model }] of Object.entries(TABLES)) {
-    const rows = await model.findMany({ where: { updatedAt: { gt: since, lte: now } } });
+    const rows = await model.findMany({ where: { syncedAt: { gt: since, lte: now } } });
     for (const row of rows) {
       changes.push({ table, op: row.deletedAt ? "delete" : "upsert", row });
     }

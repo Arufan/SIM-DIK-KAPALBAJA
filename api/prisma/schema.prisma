@@ -36,6 +36,7 @@ model Caang {
   status    String    @default("aktif") // aktif | lulus_standar | perlu_evaluasi | anggota_muda
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  syncedAt  DateTime  @default(now()) // server-stamped: pull cursor basis (clock-skew-proof)
   deletedAt DateTime?
 
   weeklyEvals WeeklyEval[]
@@ -71,6 +72,7 @@ model WeeklyEval {
   mentorId   String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+  syncedAt   DateTime  @default(now()) // server-stamped: pull cursor basis (clock-skew-proof)
   deletedAt  DateTime?
 
   @@unique([caangId, weekNo])
@@ -97,6 +99,7 @@ model StageEval {
   keterangan String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  syncedAt  DateTime  @default(now()) // server-stamped: pull cursor basis (clock-skew-proof)
   deletedAt DateTime?
 
   @@index([caangId, stage])

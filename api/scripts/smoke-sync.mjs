@@ -133,6 +133,20 @@ console.log("[browse]");
 const list = await api(`/caang?q=Smoke`, { token });
 check("caang list + computed status", list.status === 200 && list.json.some((c) => c.id === caangId && c.evalCount === 0));
 
+
+// --- clock skew: a device with a slow clock must still reach other devices ---
+// Pull cursors are server-stamped syncedAt, so a row pushed with an OLD client
+// updatedAt (phone clock behind) is still delivered after the cursor.
+console.log('[clock skew]');
+const skewId = uuid();
+const skewPush = await api('/sync/push', {
+  method: 'POST', token,
+  body: { deviceId: 'skewed-phone', changes: [{ table: 'caang', op: 'create', row: { id: skewId, npm: '2099097', nama: 'Skewed Clock', fakultas: 'F', prodi: 'P', angkatan: '99', updatedAt: '2020-01-01T00:00:00.000Z' } }] },
+});
+check('skewed push accepted', skewPush.json.results[0].status === 'accepted');
+const pullSkew = await api(`/sync/pull?since=${encodeURIComponent(pull3.json.cursor)}`, { token });
+check('row with 2020 timestamp delivered after cursor', pullSkew.json.changes.some((c) => c.row.id === skewId));
+
 // --- user center: admin CRUD + role guard ---
 console.log("[users]");
 const usersDenied = await api("/users", { token: mentorLogin.json.accessToken });
