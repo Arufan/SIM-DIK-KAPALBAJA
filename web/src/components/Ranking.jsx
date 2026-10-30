@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, live } from "../lib/db.js";
 import { overallStats, STATUS_STYLES, STAGE_LULUS_THRESHOLD } from "../lib/scoring.js";
 import { downloadCsv } from "./WeeklyEvals.jsx";
-import { exportHtmlToPdf } from "../lib/exportPdf.js";
+import { exportHtmlToPdf, escapeHtml } from "../lib/exportPdf.js";
 import { showToast } from "./toast.jsx";
 
 // Pure inline-styled rapor node — html2canvas (bundled in html2pdf) cannot
@@ -136,6 +136,190 @@ export function RaporModal({ caangId, onClose }) {
                 try {
                   showToast("Membuat PDF…");
                   await exportHtmlToPdf(buildRaporNode(caang, stats, stageRow), `rapor-${caang?.nama ?? "caang"}.pdf`);
+                  showToast("PDF tersimpan");
+                } catch (e) {
+                  showToast("Gagal membuat PDF: " + (e?.message ?? "coba lagi"), "error");
+                }
+              }}
+              className="rounded-sm bg-kuning px-4 py-2.5 label-mono text-forest-950 hover:brightness-95"
+            >📕 Simpan PDF</button>
+            <button onClick={() => window.print()} className="rounded-sm bg-forest-950 px-4 py-2.5 label-mono text-kuning hover:brightness-125">🖨️ Cetak</button>
+            <button onClick={onClose} className="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200">Tutup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Stage rapor — matches the official "Rapor Tahapan" layout
+// (Teori/Praktik/Rata-Rata per competency, cumulative score, signatures).
+const STAGE_RAPOR = {
+  uji_kampus: {
+    title: "RAPOR EVALUASI UJI KOMPETENSI DI KAMPUS",
+    hasil: "Lulus Standar – Dilanjutkan ke Tahap DIKSAR Penjelajah",
+    catatan: "Direkomendasikan melanjutkan ke Pendidikan Dasar Lapangan (DIKSAR).",
+  },
+  diksar: {
+    title: "RAPOR EVALUASI DIKSAR PENJELAJAH",
+    hasil: "Lulus Standar – Dilanjutkan ke Tahap DIKLAT Penjelajah",
+    catatan: "Direkomendasikan melanjutkan ke Pendidikan Latihan (DIKLAT).",
+  },
+  diklat: {
+    title: "RAPOR EVALUASI DIKLAT PENJELAJAH",
+    hasil: "Lulus Standar – Dinyatakan Menjadi Anggota Muda KAPALBAJA dan Mendapatkan Hak Sesuai AD/ART KAPALBAJA",
+    catatan: "Direkomendasikan menjadi Anggota Muda KAPALBAJA.",
+  },
+};
+
+const KOMPETENSI_ROWS = [
+  ["Navigasi Darat", "navdarT", "navdarP"],
+  ["Tali Menali", "taliT", "taliP"],
+  ["PPGD", "ppgdT", "ppgdP"],
+  ["Survival", "survivalT", "survivalP"],
+  ["MPP (Manajemen Perencanaan)", "mppT", "mppP"],
+];
+
+function stageRaporHtml(evalRow, caang) {
+  const meta = STAGE_RAPOR[evalRow.stage] ?? STAGE_RAPOR.uji_kampus;
+  const rows = KOMPETENSI_ROWS.map(([label, tKey, pKey], i) => {
+    const t = evalRow[tKey], p = evalRow[pKey];
+    const rata = Math.round((t + p) / 2);
+    return `<tr style="background:${i % 2 ? "#f8fafc" : "#ffffff"}">
+      <td style="border:1px solid #e2e8f0;padding:7px 10px">${label}</td>
+      <td style="border:1px solid #e2e8f0;padding:7px 10px;text-align:center">${t}</td>
+      <td style="border:1px solid #e2e8f0;padding:7px 10px;text-align:center">${p}</td>
+      <td style="border:1px solid #e2e8f0;padding:7px 10px;text-align:center;font-weight:700">${rata}</td>
+    </tr>`;
+  }).join("");
+  const total = evalRow.rata;
+  return `
+    <div style="text-align:center;margin-bottom:10px">
+      <div style="font-family:'Saira Variable',Arial,sans-serif;font-weight:700;font-size:18px;color:#0b2b1e;letter-spacing:0.05em">UKM KAPAL BAJA</div>
+      <div style="font-size:9.5px;color:#657168;letter-spacing:0.06em">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</div>
+    </div>
+    <div style="border:1px solid #cdebd8;background:#eef9f2;color:#14532d;font-weight:700;font-size:13px;text-align:center;padding:9px 10px;margin:12px 0;letter-spacing:0.02em">${meta.title}</div>
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0" />
+    <table style="width:100%;font-size:12px;margin-bottom:10px">
+      <tr>
+        <td style="padding:2px 0"><b>Nama Caang: ${escapeHtml(caang?.nama)}</b></td>
+        <td style="padding:2px 0;text-align:right"><b>NPM: ${escapeHtml(caang?.npm)}</b></td>
+      </tr>
+      <tr>
+        <td style="padding:2px 0"><b>Fakultas / Prodi:</b> ${escapeHtml(caang?.fakultas)} / ${escapeHtml(caang?.prodi)}</td>
+        <td style="padding:2px 0;text-align:right"><b>Angkatan / Tgl:</b> ${escapeHtml(caang?.angkatan)} / ${escapeHtml(evalRow.tanggal)}</td>
+      </tr>
+    </table>
+    <table style="border-collapse:collapse;width:100%;font-size:12px">
+      <thead><tr style="background:#f2f1e9">
+        <th style="border:1px solid #e2e8f0;padding:8px 10px;text-align:left;font-size:11px">Materi Kompetensi</th>
+        <th style="border:1px solid #e2e8f0;padding:8px 10px;text-align:center;font-size:11px">Teori</th>
+        <th style="border:1px solid #e2e8f0;padding:8px 10px;text-align:center;font-size:11px">Praktik</th>
+        <th style="border:1px solid #e2e8f0;padding:8px 10px;text-align:center;font-size:11px">Rata-Rata</th>
+      </tr></thead>
+      <tbody>
+        ${rows}
+        <tr style="background:#eef9f2">
+          <td colspan="3" style="border:1px solid #e2e8f0;padding:9px 10px;text-align:right;font-weight:800;color:#14532d">NILAI AKHIR KUMULATIF:</td>
+          <td style="border:1px solid #e2e8f0;padding:9px 10px;text-align:center;font-weight:800;color:#1e6943;font-size:14px">${total}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;margin-top:12px;font-size:12px;line-height:1.7">
+      <div><b style="color:#14532d">Keterangan Hasil: ${meta.hasil}</b></div>
+      <div><b>Catatan Penguji:</b> <i>${escapeHtml(evalRow.keterangan || meta.catatan)}</i></div>
+    </div>
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0 10px" />
+    <table style="width:100%;font-size:11px;text-align:center">
+      <tr>
+        <td style="width:33%;padding:4px"><b>Penguji / Evaluator</b></td>
+        <td style="width:33%;padding:4px"><b>Ketua Umum KAPALBAJA</b></td>
+        <td style="width:33%;padding:4px"><b>Pembimbing / Pembina</b></td>
+      </tr>
+      <tr><td style="padding:26px 4px 4px"></td><td></td><td></td></tr>
+      <tr>
+        <td style="padding:2px"><b style="text-decoration:underline">${escapeHtml(evalRow.penguji)}</b><br/><span style="color:#657168">Tim Evaluator KAPALBAJA</span></td>
+        <td style="padding:2px"><b style="text-decoration:underline">Kapten Pratama</b><br/><span style="color:#657168">NPM. 2020011099</span></td>
+        <td style="padding:2px"><b style="text-decoration:underline">Dr. Ir. Heru Prasetyo, M.T.</b><br/><span style="color:#657168">NIDN. 0412087501</span></td>
+      </tr>
+    </table><div style="height:10px"></div>`;
+}
+
+export function StageRaporModal({ evalId, onClose }) {
+  const stageEval = useLiveQuery(() => db.stage_evals.get(evalId), [evalId], null);
+  const caang = useLiveQuery(() => (stageEval ? db.caang.get(stageEval.caangId) : null), [stageEval?.caangId], null);
+  const meta = stageEval ? STAGE_RAPOR[stageEval.stage] ?? STAGE_RAPOR.uji_kampus : null;
+  const rows = stageEval
+    ? KOMPETENSI_ROWS.map(([label, tKey, pKey]) => ({ label, t: stageEval[tKey], p: stageEval[pKey], rata: Math.round((stageEval[tKey] + stageEval[pKey]) / 2) }))
+    : [];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-start justify-center overflow-y-auto p-4 print:hidden">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl my-6">
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h2 className="font-bold text-slate-800">Rapor Tahapan</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
+        </div>
+        <div className="p-6">
+          <div className="print-area border border-slate-200 rounded-xl p-6 text-sm">
+            <div className="text-center mb-3">
+              <p className="font-display font-bold uppercase text-lg text-forest-900">UKM KAPAL BAJA</p>
+              <p className="text-[10px] tracking-wide text-sage">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</p>
+            </div>
+            <div className="rounded-sm bg-emerald-50 border border-emerald-200 text-center py-2.5 px-3 font-bold text-emerald-900 text-sm mb-3">
+              {meta?.title}
+            </div>
+            <hr className="border-slate-200 my-3" />
+            <div className="grid grid-cols-2 gap-y-1 text-slate-700 text-sm mb-3">
+              <p>Nama Caang: <b>{caang?.nama}</b></p>
+              <p className="text-right">NPM: <b>{caang?.npm}</b></p>
+              <p>Fakultas / Prodi: <b>{caang?.fakultas} / {caang?.prodi}</b></p>
+              <p className="text-right">Angkatan / Tgl: <b>{caang?.angkatan} / {stageEval?.tanggal}</b></p>
+            </div>
+            <table className="w-full border border-slate-200 text-sm">
+              <thead>
+                <tr className="bg-paper-2 text-left">
+                  <th className="border border-slate-200 px-3 py-2">Materi Kompetensi</th>
+                  <th className="border border-slate-200 px-3 py-2 text-center">Teori</th>
+                  <th className="border border-slate-200 px-3 py-2 text-center">Praktik</th>
+                  <th className="border border-slate-200 px-3 py-2 text-center">Rata-Rata</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.label}>
+                    <td className="border border-slate-200 px-3 py-1.5">{r.label}</td>
+                    <td className="border border-slate-200 px-3 py-1.5 text-center">{r.t}</td>
+                    <td className="border border-slate-200 px-3 py-1.5 text-center">{r.p}</td>
+                    <td className="border border-slate-200 px-3 py-1.5 text-center font-bold">{r.rata}</td>
+                  </tr>
+                ))}
+                <tr className="bg-emerald-50">
+                  <td colSpan={3} className="border border-slate-200 px-3 py-2 text-right font-bold text-emerald-900">NILAI AKHIR KUMULATIF:</td>
+                  <td className="border border-slate-200 px-3 py-2 text-center font-bold text-emerald-700 text-base">{stageEval?.rata}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="mt-3 rounded-lg border border-slate-200 p-3 text-sm leading-relaxed">
+              <p className="text-emerald-900 font-semibold">Keterangan Hasil: {meta?.hasil}</p>
+              <p className="text-slate-700"><b>Catatan Penguji:</b> <i>{stageEval?.keterangan || meta?.catatan}</i></p>
+            </div>
+            <hr className="border-slate-200 my-4" />
+            <div className="grid grid-cols-3 text-center text-xs gap-2">
+              <div><p className="font-bold">Penguji / Evaluator</p><p className="mt-8 font-bold underline">{stageEval?.penguji}</p><p className="text-sage">Tim Evaluator KAPALBAJA</p></div>
+              <div><p className="font-bold">Ketua Umum KAPALBAJA</p><p className="mt-8 font-bold underline">Kapten Pratama</p><p className="text-sage">NPM. 2020011099</p></div>
+              <div><p className="font-bold">Pembimbing / Pembina</p><p className="mt-8 font-bold underline">Dr. Ir. Heru Prasetyo, M.T.</p><p className="text-sage">NIDN. 0412087501</p></div>
+            </div>
+          </div>
+          <div className="mt-5 flex justify-end gap-2 print:hidden">
+            <button
+              onClick={async () => {
+                try {
+                  if (!stageEval || !caang) return;
+                  showToast("Membuat PDF…");
+                  const node = document.createElement("div");
+                  node.innerHTML = stageRaporHtml(stageEval, caang);
+                  await exportHtmlToPdf(node, `Rapor_Tahapan_KAPALBAJA_${stageEval.tanggal}.pdf`);
                   showToast("PDF tersimpan");
                 } catch (e) {
                   showToast("Gagal membuat PDF: " + (e?.message ?? "coba lagi"), "error");

@@ -3,7 +3,7 @@ import { clearAuth, getAuth } from "../lib/api.js";
 import { useSyncStatus, sync, resyncAll } from "../lib/sync.js";
 import { showToast, ToastHost } from "./toast.jsx";
 import { CaangModal, WeeklyEvalModal, StageModal } from "./modals.jsx";
-import { RaporModal } from "./Ranking.jsx";
+import { RaporModal, StageRaporModal } from "./Ranking.jsx";
 import Dashboard from "./Dashboard.jsx";
 import Profile from "./Profile.jsx";
 import WeeklyEvals from "./WeeklyEvals.jsx";
@@ -212,6 +212,7 @@ export default function Shell({ profile, onLogout }) {
       {modal?.type === "eval" && <WeeklyEvalModal {...modal} onClose={() => setModal(null)} />}
       {modal?.type === "stage" && <StageModal {...modal} onClose={() => setModal(null)} />}
       {modal?.type === "rapor" && <RaporModal {...modal} onClose={() => setModal(null)} />}
+      {modal?.type === "stage_rapor" && <StageRaporModal {...modal} onClose={() => setModal(null)} />}
       <ToastHost />
     </div>
   );

@@ -74,6 +74,7 @@ export default function StageEvals({ stage, openModal }) {
               <span className={`rounded-sm px-2.5 py-1.5 label-mono flex-1 text-center ${e.rata >= STAGE_LULUS_THRESHOLD ? "bg-forest-700/15 text-forest-700" : "bg-amber-100 text-amber-700"}`}>
                 {e.keterangan ?? (e.rata >= STAGE_LULUS_THRESHOLD ? "Lulus" : "Perlu Perbaikan")}
               </span>
+              <button onClick={() => openModal({ type: "stage_rapor", evalId: e.id })} className="rounded-sm bg-forest-950 text-kuning border border-kuning/40 px-3 py-2 label-mono">📕</button>
               <button onClick={() => openModal({ type: "stage", stage, edit: e })} className="rounded-sm border border-forest-950/20 px-3 py-2 label-mono text-forest-900">✏️</button>
               <button
                 onClick={async () => { if (confirm("Hapus penilaian tahapan ini?")) { await deleteRecord("stage_evals", e.id); showToast("Penilaian dihapus"); } }}
@@ -124,6 +125,7 @@ export default function StageEvals({ stage, openModal }) {
                   </span>
                 </td>
                 <td className="py-2.5 px-3 whitespace-nowrap">
+                  <button onClick={() => openModal({ type: "stage_rapor", evalId: e.id })} className="mr-1" title="Rapor tahapan">📕</button>
                   <button onClick={() => openModal({ type: "stage", stage, edit: e })} className="mr-1" title="Edit">✏️</button>
                   <button
                     onClick={async () => { if (confirm("Hapus penilaian tahapan ini?")) { await deleteRecord("stage_evals", e.id); showToast("Penilaian dihapus"); } }}
