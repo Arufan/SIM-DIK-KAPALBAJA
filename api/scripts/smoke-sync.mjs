@@ -204,6 +204,16 @@ console.log("[delete wins]");
 const delOld = await api("/sync/push", { method: "POST", token, body: { deviceId: "slow-clock-device", changes: [{ table: "stage_evals", op: "delete", row: { id: stageId, updatedAt: "2019-01-01T00:00:00.000Z" } }] } });
 check("delete with 2019 timestamp accepted", delOld.json.results[0].status === "accepted" && delOld.json.results[0].serverRow.deletedAt !== null);
 
+// --- orphan FK guard: bad parent must be rejected, never crash the API ---
+console.log("[fk guard]");
+const badStage = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "fk-test", changes: [{ table: "stage_evals", op: "create", row: { id: uuid(), caangId: "no-such-caang", stage: "uji_kampus", penguji: "X", tanggal: "2026-10-30", navdarT: 80, navdarP: 80, taliT: 80, taliP: 80, ppgdT: 80, ppgdP: 80, survivalT: 80, survivalP: 80, mppT: 80, mppP: 80, updatedAt: nowIso() } }] },
+});
+check("orphan stage eval rejected (no crash)", badStage.status === 200 && badStage.json.results[0].status === "rejected");
+const stillAlive = await api("/health");
+check("API alive after FK rejection", stillAlive.status === 200);
+
 // --- user center: admin CRUD + role guard ---
 console.log("[users]");
 const usersDenied = await api("/users", { token: mentorLogin.json.accessToken });

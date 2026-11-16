@@ -101,7 +101,29 @@ const isNewer = (incomingIso, stored) => !stored || new Date(incomingIso) >= sto
 
 const deleteRow = z.object({ id: z.string().min(1), updatedAt: isoDate });
 
+/**
+ * Safety wrapper: a single bad change must never crash the API (it used to —
+ * P2003 on orphans killed the process). FK/missing-row problems are permanent
+ * data issues -> "rejected"; anything else is transient -> "error" so the
+ * client keeps the change queued and retries.
+ */
 async function applyChange(change, req) {
+  try {
+    return await applyChangeInner(change, req);
+  } catch (e) {
+    const id = String(change.row?.id ?? "?");
+    if (e?.code === "P2003") {
+      return { id, status: "rejected", errors: [{ message: "caang induk tidak ada di server (mungkin sudah dihapus)" }] };
+    }
+    if (e?.code === "P2025") {
+      return { id, status: "rejected", errors: [{ message: "data sudah tidak ada di server" }] };
+    }
+    console.error(`[sync] unexpected error on ${change.table}/${id}:`, e?.message ?? e);
+    return { id, status: "error" };
+  }
+}
+
+async function applyChangeInner(change, req) {
   const def = TABLES[change.table];
   // Deletes travel as tombstones ({ id, updatedAt }) — no full row needed.
   const parsed = (change.op === "delete" ? deleteRow : def.schema).safeParse(change.row);

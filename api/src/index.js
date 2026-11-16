@@ -22,6 +22,15 @@ app.use("/sync", requireAuth, syncRouter);
 app.use("/", requireAuth, browseRouter);
 app.use("/users", requireAuth, usersRouter);
 
+// Never let one bad request take the API down (nginx showed crashes from an
+// unhandled Prisma rejection). Log and keep serving.
+app.use((err, _req, res, _next) => {
+  console.error("[api] unhandled route error:", err?.message ?? err);
+  res.status(500).json({ error: "internal error" });
+});
+process.on("unhandledRejection", (e) => console.error("[api] unhandledRejection:", e?.message ?? e));
+process.on("uncaughtException", (e) => console.error("[api] uncaughtException:", e?.message ?? e));
+
 const port = Number(process.env.PORT) || 8080;
 app.listen(port, () => {
   console.log(`simdik-api listening on :${port}`);

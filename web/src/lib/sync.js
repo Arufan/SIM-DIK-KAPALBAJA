@@ -94,16 +94,21 @@ async function push() {
     if (r.status === "accepted" || r.status === "conflict") {
       resolved.add(r.id);
       if (r.serverRow) winningRows.push({ table: tableOf.get(r.id), row: r.serverRow });
-    } else {
+    } else if (r.status === "rejected") {
+      // Permanent data problem (e.g. parent caang deleted on another device):
+      // dequeue + surface it, otherwise it retries forever and blocks the badge.
+      resolved.add(r.id);
       rejected.push({ id: r.id, errors: r.errors ?? [] });
     }
+    // status "error" -> transient server issue: keep queued for the next retry.
   }
 
-  // Drop only resolved entries; rejected ones stay queued and are surfaced in
-  // the badge instead of vanishing silently.
   const seqs = entries.filter((e) => resolved.has(e.rowId)).map((e) => e.seq);
   if (seqs.length) await db.outbox.bulkDelete(seqs);
   await setMeta("lastRejected", rejected.length ? { at: new Date().toISOString(), count: rejected.length, items: rejected.slice(0, 5) } : null);
+  if (rejected.length > 0) {
+    window.dispatchEvent(new CustomEvent("simdik-toast", { detail: { message: `${rejected.length} perubahan ditolak server — periksa datanya`, kind: "error", id: crypto.randomUUID() } }));
+  }
 
   // Adopt the server's winning version unless a NEWER local edit is still queued.
   for (const { table, row } of winningRows) {
