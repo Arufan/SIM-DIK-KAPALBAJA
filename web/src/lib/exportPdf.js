@@ -19,6 +19,12 @@ export async function exportHtmlToPdf(node, filename) {
   document.body.appendChild(shell);
 
   try {
+    // Ensure embedded images (club logos) are decoded before html2canvas runs.
+    await Promise.all(
+      [...shell.querySelectorAll("img")].map((img) =>
+        img.complete ? Promise.resolve() : new Promise((res) => { img.onload = res; img.onerror = res; }),
+      ),
+    );
     const worker = html2pdf()
       .set({
         margin: 8,

@@ -9,6 +9,20 @@ import { showToast } from "./toast.jsx";
 
 // Pure inline-styled rapor node — html2canvas (bundled in html2pdf) cannot
 // parse Tailwind v4's oklch() colors, so PDF builders must use hex only.
+// Raport header: UBJ logo left, Kapal Baja logo right (rendered into PDFs).
+function raporHeaderHtml() {
+  return `<table style="width:100%;margin-bottom:12px">
+    <tr>
+      <td style="width:78px;vertical-align:middle"><img src="/logo-UBJ.png" style="width:64px;height:64px;object-fit:contain" /></td>
+      <td style="text-align:center;vertical-align:middle">
+        <div style="font-family:'Saira Variable',Arial,sans-serif;font-weight:700;font-size:18px;color:#0b2b1e;letter-spacing:0.05em">UKM KAPAL BAJA</div>
+        <div style="font-size:9.5px;color:#657168;letter-spacing:0.06em">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</div>
+      </td>
+      <td style="width:78px;vertical-align:middle;text-align:right"><img src="/logo_kb.png" style="width:64px;height:64px;object-fit:contain" /></td>
+    </tr>
+  </table>`;
+}
+
 // Shared rapor signature block — names/IDs come from admin settings
 // (User Center > Pengaturan Rapor), cached locally for offline export.
 function signatureHtml({ penguji, ketua, nim, pembimbing, nidn }) {
@@ -41,6 +55,19 @@ function SignatureRow({ penguji, ketua, nim, pembimbing, nidn }) {
   );
 }
 
+function RaporHeader() {
+  return (
+    <div className="flex items-center justify-between gap-3 mb-3">
+      <img src="/logo-UBJ.png" alt="Logo Universitas Bhayangkara Jakarta Raya" className="w-14 h-14 object-contain shrink-0" />
+      <div className="text-center min-w-0">
+        <p className="font-display font-bold uppercase text-lg text-forest-900 leading-tight">UKM KAPAL BAJA</p>
+        <p className="text-[10px] tracking-wide text-sage">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</p>
+      </div>
+      <img src="/logo_kb.png" alt="Logo Kapal Baja" className="w-14 h-14 object-contain rounded-full shrink-0" />
+    </div>
+  );
+}
+
 function buildRaporNode(caang, stats, stageRow, sig) {
   const stages = [
     ["uji_kampus", "Uji Kompetensi Kampus"],
@@ -54,10 +81,9 @@ function buildRaporNode(caang, stats, stageRow, sig) {
     </tr>`;
   const node = document.createElement("div");
   node.innerHTML = `
+    ${raporHeaderHtml()}
     <div style="text-align:center;margin-bottom:14px">
-      <div style="font-family:'Saira Variable',Arial,sans-serif;font-weight:700;font-size:18px;color:#071c14;letter-spacing:0.04em">UKM KAPAL BAJA</div>
-      <div style="font-size:10px;color:#657168;letter-spacing:0.06em">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</div>
-      <div style="display:inline-block;margin-top:8px;padding:4px 14px;background:#fdf6d8;border:1px solid #f4d52f;font-size:11px;font-weight:700;color:#071c14;letter-spacing:0.08em">RAPOR EVALUASI AKUMULATIF MINGGUAN</div>
+      <div style="display:inline-block;padding:4px 14px;background:#fdf6d8;border:1px solid #f4d52f;font-size:11px;font-weight:700;color:#071c14;letter-spacing:0.08em">RAPOR EVALUASI AKUMULATIF MINGGUAN</div>
     </div>
     <div style="font-size:12px;line-height:1.7;color:#101814;margin-bottom:12px">
       <div>Nama Caang: <b>${escapeHtml(caang?.nama)}</b> &nbsp;·&nbsp; NPM: <b>${escapeHtml(caang?.npm)}</b></div>
@@ -118,10 +144,9 @@ export function RaporModal({ caangId, onClose }) {
         </div>
         <div className="p-6">
           <div ref={printRef} className="print-area border border-slate-200 rounded-xl p-6 text-sm">
+            <RaporHeader />
             <div className="text-center mb-4">
-              <p className="font-display font-bold uppercase text-lg text-forest-950">UKM KAPAL BAJA</p>
-              <p className="text-[11px] tracking-wide text-slate-500">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</p>
-              <p className="mt-2 inline-block rounded bg-kuning/20 px-4 py-1 label-mono text-forest-950 border border-kuning">
+              <p className="inline-block rounded bg-kuning/20 px-4 py-1 label-mono text-forest-950 border border-kuning">
                 RAPOR EVALUASI AKUMULATIF MINGGUAN
               </p>
             </div>
@@ -230,10 +255,7 @@ function stageRaporHtml(evalRow, caang, sig) {
   }).join("");
   const total = evalRow.rata;
   return `
-    <div style="text-align:center;margin-bottom:10px">
-      <div style="font-family:'Saira Variable',Arial,sans-serif;font-weight:700;font-size:18px;color:#0b2b1e;letter-spacing:0.05em">UKM KAPAL BAJA</div>
-      <div style="font-size:9.5px;color:#657168;letter-spacing:0.06em">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</div>
-    </div>
+    ${raporHeaderHtml()}
     <div style="border:1px solid #cdebd8;background:#eef9f2;color:#14532d;font-weight:700;font-size:13px;text-align:center;padding:9px 10px;margin:12px 0;letter-spacing:0.02em">${meta.title}</div>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0" />
     <table style="width:100%;font-size:12px;margin-bottom:10px">
@@ -286,10 +308,7 @@ export function StageRaporModal({ evalId, onClose }) {
         </div>
         <div className="p-6">
           <div className="print-area border border-slate-200 rounded-xl p-6 text-sm">
-            <div className="text-center mb-3">
-              <p className="font-display font-bold uppercase text-lg text-forest-900">UKM KAPAL BAJA</p>
-              <p className="text-[10px] tracking-wide text-sage">KELUARGA PENJELAJAH ALAM UNIVERSITAS BHAYANGKARA JAKARTA RAYA</p>
-            </div>
+            <RaporHeader />
             <div className="rounded-sm bg-emerald-50 border border-emerald-200 text-center py-2.5 px-3 font-bold text-emerald-900 text-sm mb-3">
               {meta?.title}
             </div>
