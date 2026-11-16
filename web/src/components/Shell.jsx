@@ -31,7 +31,7 @@ function SyncBadge({ compact = false }) {
     <button
       onClick={() => sync()}
       title="Klik untuk sinkron sekarang"
-      className={`flex items-center gap-1.5 rounded-sm border px-2.5 sm:px-3 py-1.5 label-mono ${cls} print:hidden`}
+      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border px-2.5 sm:px-3 label-mono ${cls} print:hidden`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${!online ? "bg-white/40" : "bg-kuning animate-pulse"}`} />
       {compact ? (pending > 0 ? pending : "") : label}
@@ -61,7 +61,7 @@ function ResyncButton() {
       onClick={fire}
       disabled={busy}
       title='Sinkron ulang penuh: bangun ulang data lokal dari server (perbaiki jika jumlah data berbeda antar perangkat)'
-      className={`rounded-sm border px-2 py-1.5 label-mono print:hidden ${armed ? "border-red-400 bg-red-500/20 text-red-200" : "border-white/20 bg-white/5 text-white/70 hover:text-kuning hover:border-kuning/60"}`}
+      className={`inline-flex h-9 items-center justify-center rounded-sm border px-2.5 label-mono print:hidden ${armed ? "border-red-400 bg-red-500/20 text-red-200" : "border-white/20 bg-white/5 text-white/70 hover:text-kuning hover:border-kuning/60"}`}
     >
       {busy ? '…' : '↻'}
     </button>
@@ -79,7 +79,7 @@ function InstallButton() {
   return (
     <button
       onClick={async () => { await ev.prompt(); setEv(null); }}
-      className="rounded-sm border border-kuning/60 bg-kuning/10 px-2.5 sm:px-3 py-1.5 label-mono text-kuning hover:bg-kuning/20 print:hidden"
+      className="inline-flex h-9 items-center justify-center rounded-sm border border-kuning/60 bg-kuning/10 px-2.5 label-mono text-kuning hover:bg-kuning/20 print:hidden"
       title="Pasang aplikasi ke home screen — bekerja offline"
     >
       📲<span className="hidden sm:inline"> Install</span>
@@ -118,11 +118,7 @@ export default function Shell({ profile, onLogout }) {
     <div className="min-h-full flex flex-col">
       {/* header — compact on mobile */}
       <header className="bg-forest-950 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center gap-2.5 sm:gap-3 border-b-2 border-kuning print:hidden">
-        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-forest-900 border-[3px] border-kuning flex items-center justify-center shrink-0">
-          <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6 text-kuning" fill="currentColor">
-            <path d="M3 14l2-6h14l2 6-9 4-9-4zm2 6h14v2H5v-2z" />
-          </svg>
-        </div>
+        <img src="/logo_kb.png" alt="Logo Kapal Baja" className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover shrink-0" />
         <div className="leading-tight min-w-0">
           <h1 className="font-display font-bold uppercase text-lg sm:text-3xl text-white tracking-wide">SDM Kapal Baja</h1>
           <p className="label-mono text-kuning/90 hidden sm:block">Sistem Monitoring Diklat · Ubhara Jaya</p>
@@ -135,7 +131,7 @@ export default function Shell({ profile, onLogout }) {
           <div className="hidden md:flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/5 px-3 py-1.5 label-mono text-white/90">
             {profile.displayName}
           </div>
-          <button onClick={handleLogout} className="rounded-sm border border-white/20 bg-white/5 sm:bg-kuning sm:border-kuning sm:text-forest-950 label-mono px-2.5 sm:px-3 py-1.5 text-white/80 sm:hover:brightness-95">
+          <button onClick={handleLogout} className="inline-flex h-9 items-center justify-center rounded-sm border border-white/20 bg-white/5 sm:bg-kuning sm:border-kuning sm:text-forest-950 label-mono px-2.5 sm:px-3 text-white/80 sm:hover:brightness-95">
             <span className="sm:hidden">⎋</span><span className="hidden sm:inline">Logout</span>
           </button>
         </div>
@@ -144,10 +140,10 @@ export default function Shell({ profile, onLogout }) {
       {/* action bar — always visible (field users on portrait phones need it) */}
       <div className="flex flex-wrap bg-forest-950 px-3 sm:px-6 py-2 items-center justify-end gap-2 border-b border-white/10 print:hidden">
         <span className="label-mono text-kuning/80 mr-auto hidden sm:inline">{!online ? "Mode offline — input tetap jalan" : ""}</span>
-        <button onClick={() => setModal({ type: "caang" })} className="rounded-sm bg-kuning px-3 sm:px-4 py-2 label-mono text-forest-950 hover:brightness-95">
+        <button onClick={() => setModal({ type: "caang" })} className="inline-flex h-10 items-center justify-center rounded-sm bg-kuning px-3 sm:px-4 label-mono text-forest-950 hover:brightness-95">
           + Tambah Caang <span className="hidden sm:inline">→</span>
         </button>
-        <button onClick={() => setModal({ type: "eval" })} className="rounded-sm border border-white/25 bg-white/5 px-3 sm:px-4 py-2 label-mono text-white hover:border-kuning/60 hover:text-kuning">
+        <button onClick={() => setModal({ type: "eval" })} className="inline-flex h-10 items-center justify-center rounded-sm border border-white/25 bg-white/5 px-3 sm:px-4 label-mono text-white hover:border-kuning/60 hover:text-kuning">
           + Input Evaluasi <span className="hidden sm:inline">→</span>
         </button>
       </div>

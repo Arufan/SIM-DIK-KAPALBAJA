@@ -214,6 +214,16 @@ check("orphan stage eval rejected (no crash)", badStage.status === 200 && badSta
 const stillAlive = await api("/health");
 check("API alive after FK rejection", stillAlive.status === 200);
 
+// --- rapor settings: readable by all, writable by admins only ---
+console.log("[settings]");
+const settingsGet = await api("/settings", { token: mentorLogin.json.accessToken });
+check("settings readable by mentor", settingsGet.status === 200 && typeof settingsGet.json === "object");
+const settingsPut = await api("/settings", { method: "PUT", token, body: { rapor_ketua_nama: "Test Ketua", rapor_ketua_nim: "12345" } });
+check("admin updates rapor settings", settingsPut.status === 200 && settingsPut.json.rapor_ketua_nama === "Test Ketua");
+const settingsMentorPut = await api("/settings", { method: "PUT", token: mentorLogin.json.accessToken, body: { rapor_ketua_nama: "HACK" } });
+check("mentor cannot update settings (403)", settingsMentorPut.status === 403);
+await api("/settings", { method: "PUT", token, body: { rapor_ketua_nama: "Kapten Pratama", rapor_ketua_nim: "2020011099" } });
+
 // --- user center: admin CRUD + role guard ---
 console.log("[users]");
 const usersDenied = await api("/users", { token: mentorLogin.json.accessToken });

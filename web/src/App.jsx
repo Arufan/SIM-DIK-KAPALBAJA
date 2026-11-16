@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAuth } from "./lib/api.js";
 import { sync } from "./lib/sync.js";
+import { fetchRaporSettings } from "./lib/settings.js";
 import Login from "./components/Login.jsx";
 import Shell from "./components/Shell.jsx";
 
@@ -12,6 +13,7 @@ export default function App() {
       sync();
       // Protect offline data: ask the browser not to evict IndexedDB under pressure.
       navigator.storage?.persist?.().catch(() => {});
+      fetchRaporSettings().catch(() => {});
       // Warm the lazy html2pdf chunk so the first PDF export never races.
       import("html2pdf.js").catch(() => {});
     }

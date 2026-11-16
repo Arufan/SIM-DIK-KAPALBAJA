@@ -5,6 +5,7 @@ import { authRouter } from "./routes/auth.js";
 import { syncRouter } from "./routes/sync.js";
 import { browseRouter } from "./routes/browse.js";
 import { usersRouter } from "./routes/users.js";
+import { settingsRouter } from "./routes/settings.js";
 import { requireAuth } from "./middleware/auth.js";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use("/auth", authRouter);
 app.use("/sync", requireAuth, syncRouter);
 app.use("/", requireAuth, browseRouter);
 app.use("/users", requireAuth, usersRouter);
+app.use("/settings", requireAuth, settingsRouter);
 
 // Never let one bad request take the API down (nginx showed crashes from an
 // unhandled Prisma rejection). Log and keep serving.

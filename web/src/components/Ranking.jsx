@@ -4,11 +4,44 @@ import { db, live } from "../lib/db.js";
 import { overallStats, STATUS_STYLES, STAGE_LULUS_THRESHOLD } from "../lib/scoring.js";
 import { downloadCsv } from "./WeeklyEvals.jsx";
 import { exportHtmlToPdf, escapeHtml } from "../lib/exportPdf.js";
+import { getRaporSettings } from "../lib/settings.js";
 import { showToast } from "./toast.jsx";
 
 // Pure inline-styled rapor node — html2canvas (bundled in html2pdf) cannot
 // parse Tailwind v4's oklch() colors, so PDF builders must use hex only.
-function buildRaporNode(caang, stats, stageRow) {
+// Shared rapor signature block — names/IDs come from admin settings
+// (User Center > Pengaturan Rapor), cached locally for offline export.
+function signatureHtml({ penguji, ketua, nim, pembimbing, nidn }) {
+  return `<hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0 10px" />
+    <table style="width:100%;font-size:11px;text-align:center">
+      <tr>
+        <td style="width:33%;padding:4px"><b>Penguji / Evaluator</b></td>
+        <td style="width:33%;padding:4px"><b>Ketua Umum KAPALBAJA</b></td>
+        <td style="width:33%;padding:4px"><b>Pembimbing / Pembina</b></td>
+      </tr>
+      <tr><td style="padding:26px 4px 4px"></td><td></td><td></td></tr>
+      <tr>
+        <td style="padding:2px"><b style="text-decoration:underline">${escapeHtml(penguji)}</b><br/><span style="color:#657168">Tim Evaluator KAPALBAJA</span></td>
+        <td style="padding:2px"><b style="text-decoration:underline">${escapeHtml(ketua)}</b><br/><span style="color:#657168">NIM. ${escapeHtml(nim)}</span></td>
+        <td style="padding:2px"><b style="text-decoration:underline">${escapeHtml(pembimbing)}</b><br/><span style="color:#657168">NIDN. ${escapeHtml(nidn)}</span></td>
+      </tr>
+    </table>`;
+}
+
+function SignatureRow({ penguji, ketua, nim, pembimbing, nidn }) {
+  return (
+    <>
+      <hr className="border-slate-200 my-4" />
+      <div className="grid grid-cols-3 text-center text-xs gap-2">
+        <div><p className="font-bold">Penguji / Evaluator</p><p className="mt-8 font-bold underline">{penguji}</p><p className="text-sage">Tim Evaluator KAPALBAJA</p></div>
+        <div><p className="font-bold">Ketua Umum KAPALBAJA</p><p className="mt-8 font-bold underline">{ketua}</p><p className="text-sage">NIM. {nim}</p></div>
+        <div><p className="font-bold">Pembimbing / Pembina</p><p className="mt-8 font-bold underline">{pembimbing}</p><p className="text-sage">NIDN. {nidn}</p></div>
+      </div>
+    </>
+  );
+}
+
+function buildRaporNode(caang, stats, stageRow, sig) {
   const stages = [
     ["uji_kampus", "Uji Kompetensi Kampus"],
     ["diksar", "Diksar Penjelajah"],
@@ -59,13 +92,15 @@ function buildRaporNode(caang, stats, stageRow) {
         return `<div>${label}: <b>${r.rata}</b> — <span style="color:${lulus ? "#1e6943" : "#b45309"}">${escapeHtml(r.keterangan ?? (lulus ? "Lulus" : "Perlu Perbaikan"))}</span></div>`;
       }).join("")}
     </div>
+    ${signatureHtml({ penguji: sig.rapor_penguji_nama, ketua: sig.rapor_ketua_nama, nim: sig.rapor_ketua_nim, pembimbing: sig.rapor_pembimbing_nama, nidn: sig.rapor_pembimbing_nidn })}
     <p style="font-size:10px;color:#657168;margin-top:12px">Dicetak ${new Date().toLocaleString("id-ID")} · SIM-DIK KAPALBAJA</p>`;
   return node;
 }
 
 /** Rapor Evaluasi Akumulatif — mirrors the original modal, printable via CSS. */
 export function RaporModal({ caangId, onClose }) {
-  const printRef = useRef(null);  const caang = useLiveQuery(() => db.caang.get(caangId), [], null);
+  const printRef = useRef(null);
+  const sig = getRaporSettings();  const caang = useLiveQuery(() => db.caang.get(caangId), [], null);
   const evals = useLiveQuery(() => live("weekly_evals"), [], []);
   const stageEvals = useLiveQuery(() => live("stage_evals"), [], []);
 
@@ -129,13 +164,14 @@ export function RaporModal({ caangId, onClose }) {
                 ) : null;
               })}
             </div>
+            <SignatureRow penguji={sig.rapor_penguji_nama} ketua={sig.rapor_ketua_nama} nim={sig.rapor_ketua_nim} pembimbing={sig.rapor_pembimbing_nama} nidn={sig.rapor_pembimbing_nidn} />
           </div>
           <div className="mt-5 flex justify-end gap-2 print:hidden">
             <button
               onClick={async () => {
                 try {
                   showToast("Membuat PDF…");
-                  await exportHtmlToPdf(buildRaporNode(caang, stats, stageRow), `rapor-${caang?.nama ?? "caang"}.pdf`);
+                  await exportHtmlToPdf(buildRaporNode(caang, stats, stageRow, getRaporSettings()), `rapor-${caang?.nama ?? "caang"}.pdf`);
                   showToast("PDF tersimpan");
                 } catch (e) {
                   showToast("Gagal membuat PDF: " + (e?.message ?? "coba lagi"), "error");
@@ -143,7 +179,7 @@ export function RaporModal({ caangId, onClose }) {
               }}
               className="rounded-sm bg-kuning px-4 py-2.5 label-mono text-forest-950 hover:brightness-95"
             >📕 Simpan PDF</button>
-            <button onClick={() => window.print()} className="rounded-sm bg-forest-950 px-4 py-2.5 label-mono text-kuning hover:brightness-125">🖨️ Cetak</button>
+            
             <button onClick={onClose} className="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200">Tutup</button>
           </div>
         </div>
@@ -180,7 +216,7 @@ const KOMPETENSI_ROWS = [
   ["MPP (Manajemen Perencanaan)", "mppT", "mppP"],
 ];
 
-function stageRaporHtml(evalRow, caang) {
+function stageRaporHtml(evalRow, caang, sig) {
   const meta = STAGE_RAPOR[evalRow.stage] ?? STAGE_RAPOR.uji_kampus;
   const rows = KOMPETENSI_ROWS.map(([label, tKey, pKey], i) => {
     const t = evalRow[tKey], p = evalRow[pKey];
@@ -229,25 +265,13 @@ function stageRaporHtml(evalRow, caang) {
       <div><b style="color:#14532d">Keterangan Hasil: ${meta.hasil}</b></div>
       <div><b>Catatan Penguji:</b> <i>${escapeHtml(evalRow.keterangan || meta.catatan)}</i></div>
     </div>
-    <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0 10px" />
-    <table style="width:100%;font-size:11px;text-align:center">
-      <tr>
-        <td style="width:33%;padding:4px"><b>Penguji / Evaluator</b></td>
-        <td style="width:33%;padding:4px"><b>Ketua Umum KAPALBAJA</b></td>
-        <td style="width:33%;padding:4px"><b>Pembimbing / Pembina</b></td>
-      </tr>
-      <tr><td style="padding:26px 4px 4px"></td><td></td><td></td></tr>
-      <tr>
-        <td style="padding:2px"><b style="text-decoration:underline">${escapeHtml(evalRow.penguji)}</b><br/><span style="color:#657168">Tim Evaluator KAPALBAJA</span></td>
-        <td style="padding:2px"><b style="text-decoration:underline">Kapten Pratama</b><br/><span style="color:#657168">NPM. 2020011099</span></td>
-        <td style="padding:2px"><b style="text-decoration:underline">Dr. Ir. Heru Prasetyo, M.T.</b><br/><span style="color:#657168">NIDN. 0412087501</span></td>
-      </tr>
-    </table><div style="height:10px"></div>`;
+    ${signatureHtml({ penguji: evalRow.penguji, ketua: sig.rapor_ketua_nama, nim: sig.rapor_ketua_nim, pembimbing: sig.rapor_pembimbing_nama, nidn: sig.rapor_pembimbing_nidn })}<div style="height:10px"></div>`;
 }
 
 export function StageRaporModal({ evalId, onClose }) {
   const stageEval = useLiveQuery(() => db.stage_evals.get(evalId), [evalId], null);
   const caang = useLiveQuery(() => (stageEval ? db.caang.get(stageEval.caangId) : null), [stageEval?.caangId], null);
+  const sig = getRaporSettings();
   const meta = stageEval ? STAGE_RAPOR[stageEval.stage] ?? STAGE_RAPOR.uji_kampus : null;
   const rows = stageEval
     ? KOMPETENSI_ROWS.map(([label, tKey, pKey]) => ({ label, t: stageEval[tKey], p: stageEval[pKey], rata: Math.round((stageEval[tKey] + stageEval[pKey]) / 2) }))
@@ -304,12 +328,7 @@ export function StageRaporModal({ evalId, onClose }) {
               <p className="text-emerald-900 font-semibold">Keterangan Hasil: {meta?.hasil}</p>
               <p className="text-slate-700"><b>Catatan Penguji:</b> <i>{stageEval?.keterangan || meta?.catatan}</i></p>
             </div>
-            <hr className="border-slate-200 my-4" />
-            <div className="grid grid-cols-3 text-center text-xs gap-2">
-              <div><p className="font-bold">Penguji / Evaluator</p><p className="mt-8 font-bold underline">{stageEval?.penguji}</p><p className="text-sage">Tim Evaluator KAPALBAJA</p></div>
-              <div><p className="font-bold">Ketua Umum KAPALBAJA</p><p className="mt-8 font-bold underline">Kapten Pratama</p><p className="text-sage">NPM. 2020011099</p></div>
-              <div><p className="font-bold">Pembimbing / Pembina</p><p className="mt-8 font-bold underline">Dr. Ir. Heru Prasetyo, M.T.</p><p className="text-sage">NIDN. 0412087501</p></div>
-            </div>
+            <SignatureRow penguji={stageEval?.penguji} ketua={sig.rapor_ketua_nama} nim={sig.rapor_ketua_nim} pembimbing={sig.rapor_pembimbing_nama} nidn={sig.rapor_pembimbing_nidn} />
           </div>
           <div className="mt-5 flex justify-end gap-2 print:hidden">
             <button
@@ -318,7 +337,7 @@ export function StageRaporModal({ evalId, onClose }) {
                   if (!stageEval || !caang) return;
                   showToast("Membuat PDF…");
                   const node = document.createElement("div");
-                  node.innerHTML = stageRaporHtml(stageEval, caang);
+                  node.innerHTML = stageRaporHtml(stageEval, caang, getRaporSettings());
                   await exportHtmlToPdf(node, `Rapor_Tahapan_KAPALBAJA_${stageEval.tanggal}.pdf`);
                   showToast("PDF tersimpan");
                 } catch (e) {
@@ -327,7 +346,7 @@ export function StageRaporModal({ evalId, onClose }) {
               }}
               className="rounded-sm bg-kuning px-4 py-2.5 label-mono text-forest-950 hover:brightness-95"
             >📕 Simpan PDF</button>
-            <button onClick={() => window.print()} className="rounded-sm bg-forest-950 px-4 py-2.5 label-mono text-kuning hover:brightness-125">🖨️ Cetak</button>
+            
             <button onClick={onClose} className="rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200">Tutup</button>
           </div>
         </div>

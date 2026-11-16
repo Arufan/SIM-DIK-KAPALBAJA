@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch, getAuth } from "../lib/api.js";
+import { getRaporSettings, cacheRaporSettings } from "../lib/settings.js";
 import { showToast } from "./toast.jsx";
 import { Modal } from "./modals.jsx";
 
@@ -83,6 +84,61 @@ function AddUserModal({ onClose, onCreated }) {
   );
 }
 
+
+function RaporSettingsCard() {
+  const [f, setF] = useState(() => getRaporSettings());
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const input = "w-full rounded-sm border border-forest-950/25 bg-white px-3 py-2.5 text-base text-ink focus:outline-none focus:ring-2 focus:ring-forest-700";
+
+  async function save() {
+    setBusy(true);
+    try {
+      const updated = await apiFetch("/settings", { method: "PUT", body: f });
+      cacheRaporSettings({ ...f, ...updated });
+      showToast("Pengaturan rapor disimpan");
+    } catch (e) {
+      showToast(e.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-md border border-forest-950/10 shadow-sm p-4 sm:p-5">
+      <h2 className="font-bold text-ink">⚙️ Pengaturan Rapor</h2>
+      <p className="text-xs text-sage mb-3">Nama pada tanda tangan Rapor Tahapan &amp; Rapor Final.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="label-mono text-forest-900 block mb-1.5">Nama Penguji (rapor final)</label>
+          <input className={input} value={f.rapor_penguji_nama} onChange={set("rapor_penguji_nama")} />
+        </div>
+        <div>
+          <label className="label-mono text-forest-900 block mb-1.5">Ketua Umum — Nama</label>
+          <input className={input} value={f.rapor_ketua_nama} onChange={set("rapor_ketua_nama")} />
+        </div>
+        <div>
+          <label className="label-mono text-forest-900 block mb-1.5">Ketua Umum — NIM</label>
+          <input className={input} value={f.rapor_ketua_nim} onChange={set("rapor_ketua_nim")} />
+        </div>
+        <div>
+          <label className="label-mono text-forest-900 block mb-1.5">Pembimbing — Nama</label>
+          <input className={input} value={f.rapor_pembimbing_nama} onChange={set("rapor_pembimbing_nama")} />
+        </div>
+        <div>
+          <label className="label-mono text-forest-900 block mb-1.5">Pembimbing — NIDN</label>
+          <input className={input} value={f.rapor_pembimbing_nidn} onChange={set("rapor_pembimbing_nidn")} />
+        </div>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <button onClick={save} disabled={busy} className="rounded-sm bg-kuning px-4 py-2.5 label-mono text-forest-950 hover:brightness-95 disabled:opacity-60">
+          {busy ? "Menyimpan…" : "Simpan Pengaturan →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function UserCenter() {
   const [users, setUsers] = useState(null);
   const [modal, setModal] = useState(false);
@@ -119,6 +175,8 @@ export default function UserCenter() {
           + Tambah User →
         </button>
       </div>
+
+      <RaporSettingsCard />
 
       {users === null && <div className="bg-white rounded-md border border-forest-950/10 p-6 text-center text-sm text-sage">Memuat…</div>}
       {users?.length === 0 && <div className="bg-white rounded-md border border-forest-950/10 p-6 text-center text-sm text-sage">Tidak bisa memuat data (offline?).</div>}

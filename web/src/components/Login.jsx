@@ -4,13 +4,7 @@ import { sync } from "../lib/sync.js";
 import { showToast } from "./toast.jsx";
 
 function Logo({ size = "w-14 h-14" }) {
-  return (
-    <div className={`${size} rounded-full bg-forest-900 flex items-center justify-center shrink-0 border-4 border-kuning`}>
-      <svg viewBox="0 0 24 24" className="w-3/5 h-3/5 text-kuning" fill="currentColor">
-        <path d="M3 14l2-6h14l2 6-9 4-9-4zm2 6h14v2H5v-2z" />
-      </svg>
-    </div>
-  );
+  return <img src="/logo_kb.png" alt="Logo Kapal Baja" className={`${size} rounded-full object-cover shrink-0`} />;
 }
 
 const inputCls =
