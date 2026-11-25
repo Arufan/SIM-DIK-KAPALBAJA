@@ -165,6 +165,27 @@ export async function resyncAll() {
   }
 }
 
+
+/**
+ * Re-queue EVERY live local row for push. Repairs devices whose outbox was
+ * emptied by an old client bug: local-only rows (never on the server) upload;
+ * rows already on the server resolve as LWW conflicts and are no-ops.
+ */
+export async function pushAllLocal() {
+  if (syncing && Date.now() - syncingSince < 60000) throw new Error("Sync sedang berjalan, coba lagi sebentar");
+  if (!navigator.onLine || !getAuth()) throw new Error("Butuh koneksi internet dan login");
+  let queued = 0;
+  for (const table of ["caang", "weekly_evals", "stage_evals"]) {
+    const rows = await db[table].filter((r) => !r.deletedAt).toArray();
+    for (const r of rows) {
+      await db.outbox.add({ table, op: "put", rowId: r.id });
+    }
+    queued += rows.length;
+  }
+  await sync();
+  return queued;
+}
+
 /** Pending count + last sync time for the badge; re-runs whenever they change. */
 export function useSyncStatus() {
   const pending = useLiveQuery(() => db.outbox.count(), [], 0);
