@@ -104,7 +104,7 @@ async function push() {
       // Permanent data problem (e.g. parent caang deleted on another device):
       // dequeue + surface it, otherwise it retries forever and blocks the badge.
       resolved.add(r.id);
-      rejected.push({ id: r.id, errors: r.errors ?? [] });
+      rejected.push({ id: r.id, table: tableOf.get(r.id), errors: (r.errors ?? []).map((e) => (typeof e === "string" ? e : e.message ?? JSON.stringify(e))) });
     }
     // status "error" -> transient server issue: keep queued for the next retry.
   }
@@ -165,6 +165,23 @@ export async function resyncAll() {
   }
 }
 
+
+export const getRejectionDetails = async () => (await getMeta("lastRejected")) ?? null;
+
+/** Permanently remove locally the rows the server rejected (unsyncable orphans). */
+export async function discardRejected() {
+  const info = await getMeta("lastRejected");
+  if (!info?.items?.length) return 0;
+  let removed = 0;
+  for (const item of info.items) {
+    if (!item.table) continue;
+    await db[item.table].delete(item.id).catch(() => {});
+    removed++;
+  }
+  await setMeta("lastRejected", null);
+  notify();
+  return removed;
+}
 
 /**
  * Re-queue EVERY live local row for push. Repairs devices whose outbox was

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { clearAuth, getAuth } from "../lib/api.js";
-import { useSyncStatus, sync, resyncAll, pushAllLocal } from "../lib/sync.js";
+import { useSyncStatus, sync, resyncAll, pushAllLocal, getRejectionDetails, discardRejected } from "../lib/sync.js";
 import { showToast, ToastHost } from "./toast.jsx";
 import { CaangModal, WeeklyEvalModal, StageModal } from "./modals.jsx";
 import { RaporModal, StageRaporModal } from "./Ranking.jsx";
@@ -72,9 +72,54 @@ function ResyncButton() {
   );
 }
 
+function RejectionDialog({ info, onClose }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-end sm:items-center sm:justify-center sm:p-4 print:hidden">
+      <div className="w-full sm:max-w-lg bg-paper rounded-t-xl sm:rounded-md shadow-2xl flex flex-col max-h-[90dvh]">
+        <div className="flex items-center justify-between px-5 py-3 border-b shrink-0">
+          <h2 className="font-bold text-ink text-base">Data ditolak server ({info.count})</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl w-9 h-9 flex items-center justify-center">✕</button>
+        </div>
+        <div className="p-5 overflow-y-auto thin-scroll space-y-2" style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}>
+          <p className="text-xs text-sage">Baris berikut tidak bisa disinkronkan (mis. induk caang-nya sudah dihapus di perangkat ini). Bisa dibuang dari perangkat agar tidak muncul lagi.</p>
+          {(info.items ?? []).map((item, i) => (
+            <div key={i} className="rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-xs">
+              <div className="font-mono text-ink">{item.table ?? "?"} · {String(item.id).slice(0, 18)}</div>
+              <div className="text-red-700 mt-0.5">{(item.errors ?? []).join(" · ") || "ditolak"}</div>
+            </div>
+          ))}
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="rounded-sm border border-forest-950/20 bg-white px-4 py-3 label-mono text-forest-900 hover:bg-paper-2">Tutup</button>
+            <button
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  const n = await discardRejected();
+                  showToast(n + " data dibuang dari perangkat");
+                  onClose();
+                } catch (e) {
+                  showToast(e.message, "error");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              disabled={busy}
+              className="rounded-sm bg-red-600 px-4 py-3 label-mono text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              {busy ? "…" : "Buang dari perangkat"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PushAllButton() {
   const [armed, setArmed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [rejection, setRejection] = useState(null);
   async function fire() {
     if (!armed) { setArmed(true); setTimeout(() => setArmed(false), 3000); return; }
     setArmed(false);
@@ -82,6 +127,8 @@ function PushAllButton() {
     try {
       const n = await pushAllLocal();
       showToast("Mengirim " + n + " baris lokal ke server…");
+      const info = await getRejectionDetails();
+      if (info?.items?.length) setRejection(info);
     } catch (e) {
       showToast(e.message, "error");
     } finally {
@@ -89,6 +136,7 @@ function PushAllButton() {
     }
   }
   return (
+    <>
     <button
       onClick={fire}
       disabled={busy}
@@ -97,6 +145,8 @@ function PushAllButton() {
     >
       {busy ? "…" : "⇪"}
     </button>
+    {rejection && <RejectionDialog info={rejection} onClose={() => setRejection(null)} />}
+    </>
   );
 }
 
