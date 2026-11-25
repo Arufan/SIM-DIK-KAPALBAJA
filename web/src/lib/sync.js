@@ -21,6 +21,7 @@ if (!deviceId) {
 
 let syncTimer = null;
 let syncing = false;
+let syncingSince = 0;
 const listeners = new Set();
 const notify = () => listeners.forEach((fn) => fn());
 
@@ -49,16 +50,21 @@ export function scheduleSync() {
 }
 
 export async function sync() {
-  if (syncing || !navigator.onLine || !getAuth()) { notify(); return; }
+  // Watchdog: a hung fetch (iOS app suspension) must never freeze sync forever.
+  if (syncing && Date.now() - syncingSince < 60000) { notify(); return; }
+  if (!navigator.onLine || !getAuth()) { notify(); return; }
   syncing = true;
+  syncingSince = Date.now();
   notify();
   try {
     await push();
     await pull();
     await setMeta("lastSync", new Date().toISOString());
+    await setMeta("lastSyncError", null);
   } catch (e) {
-    if (e?.sessionExpired) notify(); // App.jsx listens for this via status
-    // network/offline errors are fine: data stays queued in the outbox
+    const msg = e?.sessionExpired ? "Sesi berakhir — silakan login ulang" : e?.offline ? "Tidak ada koneksi" : (e?.message ?? "Error sync");
+    await setMeta("lastSyncError", { at: new Date().toISOString(), message: msg }).catch(() => {});
+    if (e?.sessionExpired) notify();
   } finally {
     syncing = false;
     notify();
@@ -164,6 +170,7 @@ export function useSyncStatus() {
   const pending = useLiveQuery(() => db.outbox.count(), [], 0);
   const lastSync = useLiveQuery(() => getMeta("lastSync"), [], null);
   const [online, setOnline] = useState(navigator.onLine);
+  const lastError = useLiveQuery(() => getMeta("lastSyncError"), [], null);
   useEffect(() => {
     const on = () => { setOnline(true); sync(); };
     const off = () => setOnline(false);
@@ -173,5 +180,5 @@ export function useSyncStatus() {
     sync();
     return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); clearInterval(iv); };
   }, []);
-  return { pending, lastSync, online, syncing };
+  return { pending, lastSync, online, syncing, lastError };
 }

@@ -14,6 +14,9 @@ async function raw(path, { method = "GET", token, body } = {}) {
     method,
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: body ? JSON.stringify(body) : undefined,
+    // iOS Safari can leave fetches hanging for minutes after app suspension —
+    // a hard timeout keeps the sync engine responsive.
+    ...(typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(15000) } : {}),
   });
   const json = await res.json().catch(() => ({}));
   return { status: res.status, json };

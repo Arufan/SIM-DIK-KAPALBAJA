@@ -28,9 +28,11 @@ const caangRow = z.object({
   id: z.string().min(1),
   npm: z.string().min(1),
   nama: z.string().min(1),
-  fakultas: z.string().min(1),
-  prodi: z.string().min(1),
-  angkatan: z.string().min(1),
+  // Tolerant of legacy rows: mentors used to be able to save caang with these
+  // fields empty — such rows must still sync (admin can complete them later).
+  fakultas: z.string().default(""),
+  prodi: z.string().default(""),
+  angkatan: z.string().default(""),
   mentorId: z.string().nullish(),
   mentorNama: z.string().nullish(),
   status: z.enum(["aktif", "lulus_standar", "perlu_evaluasi", "anggota_muda"]).default("aktif"),

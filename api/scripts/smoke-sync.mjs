@@ -224,6 +224,14 @@ const settingsMentorPut = await api("/settings", { method: "PUT", token: mentorL
 check("mentor cannot update settings (403)", settingsMentorPut.status === 403);
 await api("/settings", { method: "PUT", token, body: { rapor_ketua_nama: "Kapten Pratama", rapor_ketua_nim: "2020011099" } });
 
+// --- legacy caang: empty fakultas/prodi/angkatan must still sync (stuck rows) ---
+console.log("[legacy caang]");
+const legacyPush = await api("/sync/push", {
+  method: "POST", token,
+  body: { deviceId: "legacy-device", changes: [{ table: "caang", op: "create", row: { id: uuid(), npm: "2099096", nama: "Legacy Row", fakultas: "", prodi: "", angkatan: "", updatedAt: nowIso() } }] },
+});
+check("caang with empty fakultas/prodi/angkatan accepted", legacyPush.json.results[0].status === "accepted");
+
 // --- user center: admin CRUD + role guard ---
 console.log("[users]");
 const usersDenied = await api("/users", { token: mentorLogin.json.accessToken });

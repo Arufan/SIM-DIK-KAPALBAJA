@@ -12,25 +12,29 @@ import Ranking from "./Ranking.jsx";
 import UserCenter from "./UserCenter.jsx";
 
 function SyncBadge({ compact = false }) {
-  const { pending, lastSync, online, syncing } = useSyncStatus();
+  const { pending, lastSync, online, syncing, lastError } = useSyncStatus();
   const label = !online
     ? "OFFLINE"
-    : syncing
-      ? "SINKRON…"
-      : pending > 0
-        ? `${pending} PENDING`
-        : lastSync
-          ? `SYNC ${new Date(lastSync).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
-          : "BELUM SYNC";
+    : lastError
+      ? "SYNC GAGAL"
+      : syncing
+        ? "SINKRON…"
+        : pending > 0
+          ? `${pending} PENDING`
+          : lastSync
+            ? `SYNC ${new Date(lastSync).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+            : "BELUM SYNC";
   const cls = !online
     ? "bg-white/10 text-white/70 border-white/20"
-    : pending > 0 || syncing
-      ? "bg-kuning/20 text-kuning border-kuning/50"
-      : "bg-forest-700/40 text-emerald-200 border-emerald-300/30";
+    : lastError
+      ? "bg-red-500/20 text-red-200 border-red-400/50"
+      : pending > 0 || syncing
+        ? "bg-kuning/20 text-kuning border-kuning/50"
+        : "bg-forest-700/40 text-emerald-200 border-emerald-300/30";
   return (
     <button
       onClick={() => sync()}
-      title="Klik untuk sinkron sekarang"
+      title={lastError ? `Gagal: ${lastError.message}` : "Klik untuk sinkron sekarang"}
       className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border px-2.5 sm:px-3 label-mono ${cls} print:hidden`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${!online ? "bg-white/40" : "bg-kuning animate-pulse"}`} />

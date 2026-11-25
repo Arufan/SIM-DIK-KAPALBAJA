@@ -68,6 +68,7 @@ export function CaangModal({ edit, onClose }) {
   async function save(e) {
     e.preventDefault();
     if (!f.npm.trim() || !f.nama.trim()) return showToast("NPM dan Nama wajib diisi", "error");
+    if (!f.fakultas.trim() || !f.prodi.trim() || !f.angkatan.trim()) return showToast("Fakultas, Program Studi, dan Angkatan wajib diisi", "error");
     const row = { ...f, id: edit?.id ?? crypto.randomUUID() };
     await saveRecord("caang", row);
     showToast(edit ? "Profil diperbarui" : "Calon anggota tersimpan");
