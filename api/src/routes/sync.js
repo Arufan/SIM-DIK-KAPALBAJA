@@ -135,8 +135,11 @@ async function applyChangeInner(change, req) {
   const row = parsed.data;
   const existing = await def.model.findUnique({ where: { id: row.id } });
 
-  // Caang edit/delete is admin-only (mentors may create, auto-assigned to them).
-  if (change.table === "caang" && change.op !== "create" && req.user.role !== "admin") {
+  // Caang edit/delete of an EXISTING row is admin-only. A row that does not
+  // exist on the server yet is a CREATE even when the client labels it
+  // "update" (the client's outbox only knows put/delete) — mentors may create,
+  // auto-assigned to themselves.
+  if (change.table === "caang" && change.op !== "create" && req.user.role !== "admin" && existing) {
     return { id: row.id, status: "rejected", errors: [{ message: "edit/hapus calon anggota khusus admin" }] };
   }
 

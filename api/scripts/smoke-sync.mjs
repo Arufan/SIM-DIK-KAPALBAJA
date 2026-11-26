@@ -96,6 +96,14 @@ check("mentorNama from creator display name", pushMentor.json.results[0].serverR
 
 // --- caang edit/delete is admin-only ---
 console.log("[caang permissions]");
+// Regression guard: the client sends new caang as op "update" (outbox only has
+// put/delete) — a mentor's CREATE must not be mistaken for an edit.
+const mentorCreateAsUpdateId = uuid();
+const mentorCreateAsUpdate = await api("/sync/push", {
+  method: "POST", token: mentorLogin.json.accessToken,
+  body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "update", row: { id: mentorCreateAsUpdateId, npm: "2099095", nama: "Mentor Create Via Update", fakultas: "F", prodi: "P", angkatan: "99", updatedAt: nowIso() } }] },
+});
+check("mentor create sent as update accepted", mentorCreateAsUpdate.json.results[0].status === "accepted");
 const mentorEdit = await api("/sync/push", {
   method: "POST", token: mentorLogin.json.accessToken,
   body: { deviceId: "smoke-device", changes: [{ table: "caang", op: "update", row: { id: mentorCaangId, npm: "2099098", nama: "HACKED", fakultas: "F", prodi: "P", angkatan: "99", updatedAt: nowIso() } }] },
